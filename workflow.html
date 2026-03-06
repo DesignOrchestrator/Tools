@@ -13,29 +13,34 @@ background:#eef2f6;
 margin:0;
 }
 
-/* HEADER */
+/* TOP BAR */
 
 .topbar{
 position:sticky;
 top:0;
 background:white;
-padding:20px 30px;
-box-shadow:0 4px 12px rgba(0,0,0,0.05);
+padding:12px 20px;
+box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+margin:0;
+font-size:20px;
 }
 
 .toolbar{
 display:flex;
 flex-wrap:wrap;
-gap:10px;
-margin-top:10px;
+gap:8px;
+margin-top:8px;
 }
 
 button{
-padding:8px 14px;
+padding:6px 12px;
 border:none;
 border-radius:6px;
 cursor:pointer;
-font-weight:500;
+font-size:13px;
 }
 
 .primary{background:#2c7be5;color:white;}
@@ -48,67 +53,68 @@ font-weight:500;
 .dashboard{
 display:grid;
 grid-template-columns:repeat(4,1fr);
-gap:15px;
-margin-top:15px;
+gap:10px;
+margin-top:10px;
 }
 
 .box{
-background:white;
-padding:15px;
-border-radius:8px;
-box-shadow:0 2px 8px rgba(0,0,0,0.05);
+background:#f8fafc;
+padding:8px;
+border-radius:6px;
+text-align:center;
 }
 
 .box h3{
 margin:0;
-font-size:14px;
+font-size:11px;
 color:#666;
 }
 
 .box p{
-margin:5px 0 0;
-font-size:22px;
-font-weight:bold;
+margin:2px 0 0;
+font-size:16px;
+font-weight:600;
 }
 
 /* CONTAINER */
 
 .container{
-max-width:1200px;
+max-width:1100px;
 margin:auto;
-padding:30px;
+padding:20px;
 }
 
-/* STAGE CARD */
+/* STAGE */
 
 .stage-box{
 background:white;
-border-radius:10px;
-margin-top:25px;
-box-shadow:0 4px 18px rgba(0,0,0,0.05);
+border-radius:8px;
+margin-top:15px;
+box-shadow:0 2px 8px rgba(0,0,0,0.05);
 overflow:hidden;
 }
 
 .stage-header{
 background:linear-gradient(90deg,#2c7be5,#4e8df5);
 color:white;
-padding:14px 18px;
+padding:10px 14px;
 font-weight:600;
 display:flex;
 justify-content:space-between;
 cursor:pointer;
+font-size:14px;
 }
 
 .progress{
-height:6px;
+height:5px;
 background:#e6e9ef;
-margin-top:6px;
-border-radius:4px;
+margin-top:4px;
+border-radius:3px;
 overflow:hidden;
 }
 
 .progress-bar{
-height:6px;
+height:5px;
 background:#28a745;
 }
 
@@ -120,8 +126,9 @@ border-collapse:collapse;
 }
 
 th,td{
-padding:10px;
+padding:8px;
 border-bottom:1px solid #eee;
+font-size:13px;
 }
 
 thead{
@@ -132,6 +139,7 @@ input,select{
 width:100%;
 border:none;
 background:transparent;
+font-size:13px;
 }
 
 input:focus{
@@ -139,21 +147,46 @@ background:#fff8dc;
 outline:none;
 }
 
-.col-step{width:80px}
-.col-status{width:150px}
-.col-ref{width:220px}
-.col-delete{width:60px}
+/* STATUS BALL */
+
+.status{
+display:flex;
+align-items:center;
+gap:6px;
+}
+
+.ball{
+width:10px;
+height:10px;
+border-radius:50%;
+}
+
+.ball-grey{background:#ccc;}
+.ball-yellow{background:#f5b301;}
+.ball-green{background:#28a745;}
+
+.col-step{width:70px}
+.col-status{width:140px}
+.col-ref{width:200px}
+.col-delete{width:50px}
 
 .delete-btn{
 background:#e55353;
 color:white;
 border:none;
-padding:5px 9px;
-border-radius:5px;
+padding:4px 7px;
+border-radius:4px;
 cursor:pointer;
+font-size:12px;
 }
 
-.status-done{background:#e6f7ec;}
+.row-done{
+background:#e6f7ec;
+}
+
+.row-progress{
+background:#fff6db;
+}
 
 </style>
 </head>
@@ -179,8 +212,8 @@ cursor:pointer;
 
 <div class="dashboard">
 
-<div class="box"><h3>Total Steps</h3><p id="totalSteps">0</p></div>
-<div class="box"><h3>Completed</h3><p id="completedSteps">0</p></div>
+<div class="box"><h3>Total</h3><p id="totalSteps">0</p></div>
+<div class="box"><h3>Done</h3><p id="completedSteps">0</p></div>
 <div class="box"><h3>Stages</h3><p id="stageCount">0</p></div>
 <div class="box"><h3>Progress</h3><p id="progressPercent">0%</p></div>
 
@@ -215,8 +248,6 @@ function save(){
 localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 }
 
-/* GROUP STAGES */
-
 function groupStages(){
 
 let groups={}
@@ -235,8 +266,6 @@ return groups
 
 }
 
-/* RENDER */
-
 function render(){
 
 let container=document.getElementById("workflow")
@@ -253,7 +282,8 @@ let done=data.filter(r=>r.status==="done").length
 document.getElementById("totalSteps").innerText=total
 document.getElementById("completedSteps").innerText=done
 document.getElementById("stageCount").innerText=stages.length
-document.getElementById("progressPercent").innerText=total?Math.round(done/total*100)+"%":"0%"
+document.getElementById("progressPercent").innerText=
+total?Math.round(done/total*100)+"%":"0%"
 
 stages.forEach((stage,stageIndex)=>{
 
@@ -307,7 +337,16 @@ rows.forEach((row,rowIndex)=>{
 let index=data.indexOf(row)
 let step=`${stageIndex+1}.${rowIndex+1}`
 
+let rowClass=""
+if(row.status==="done") rowClass="row-done"
+if(row.status==="progress") rowClass="row-progress"
+
 let tr=document.createElement("tr")
+tr.className=rowClass
+
+let ball="ball-grey"
+if(row.status==="progress") ball="ball-yellow"
+if(row.status==="done") ball="ball-green"
 
 tr.innerHTML=`
 
@@ -322,11 +361,21 @@ tr.innerHTML=`
 </td>
 
 <td>
+
+<div class="status">
+
+<div class="ball ${ball}"></div>
+
 <select onchange="update(${index},'status',this.value)">
+
 <option value="not" ${row.status==="not"?'selected':''}>Not Started</option>
 <option value="progress" ${row.status==="progress"?'selected':''}>In Progress</option>
 <option value="done" ${row.status==="done"?'selected':''}>Completed</option>
+
 </select>
+
+</div>
+
 </td>
 
 <td>
@@ -360,12 +409,9 @@ body.style.display = body.style.display==="none" ? "block":"none"
 
 }
 
-/* ADD ROW */
-
 function addRow(){
 
 let stage=prompt("Stage name")
-
 if(!stage) return
 
 data.push({
@@ -380,12 +426,9 @@ render()
 
 }
 
-/* ADD STAGE */
-
 function addStage(){
 
 let name=prompt("Stage name")
-
 if(!name) return
 
 data.push({
@@ -400,14 +443,11 @@ render()
 
 }
 
-/* UPDATE */
-
 function update(i,key,val){
 data[i][key]=val
 save()
+render()
 }
-
-/* DELETE */
 
 function deleteRow(i){
 data.splice(i,1)
@@ -415,12 +455,9 @@ save()
 render()
 }
 
-/* EXPORT */
-
 function exportBackup(){
 
 let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
-
 let a=document.createElement("a")
 
 a.href=URL.createObjectURL(blob)
@@ -428,8 +465,6 @@ a.download="workflow-backup.json"
 a.click()
 
 }
-
-/* IMPORT */
 
 function importBackup(){
 
@@ -442,7 +477,6 @@ let reader=new FileReader()
 reader.onload=function(){
 
 data=JSON.parse(reader.result)
-
 save()
 render()
 
@@ -459,8 +493,6 @@ file.click()
 function importTemplate(){
 importBackup()
 }
-
-/* CLEAR */
 
 function clearData(){
 
