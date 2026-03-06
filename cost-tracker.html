@@ -121,9 +121,7 @@ Recurring
 <div class="toolbar">
 
 <button onclick="addRow()">Add Cost</button>
-
 <button onclick="exportBackup()">Export Backup</button>
-
 <button onclick="importBackup()">Import Backup</button>
 
 <input type="file" id="fileInput" style="display:none">
@@ -181,6 +179,8 @@ row.innerHTML=`
 <option>Education</option>
 <option>Travel</option>
 <option>Utilities</option>
+<option>Tax</option>
+<option>Discount</option>
 <option>Misc</option>
 </select>
 </td>
@@ -189,12 +189,12 @@ row.innerHTML=`
 
 <td><input placeholder="Vendor"></td>
 
-<td><input type="number" class="amount" oninput="calculate()"></td>
+<td><input type="number" step="0.01" class="amount" oninput="calculate()"></td>
 
 <td>
 <select>
-<option>USD</option>
 <option>SGD</option>
+<option>USD</option>
 </select>
 </td>
 
@@ -246,9 +246,9 @@ else recurring+=val
 
 }
 
-document.getElementById("total").innerText=total
-document.getElementById("onetime").innerText=one
-document.getElementById("recurring").innerText=recurring
+document.getElementById("total").innerText=total.toFixed(2)
+document.getElementById("onetime").innerText=one.toFixed(2)
+document.getElementById("recurring").innerText=recurring.toFixed(2)
 
 saveData()
 
