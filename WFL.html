@@ -2,14 +2,15 @@
 <html lang="en">
 
 <head>
-
 <meta charset="UTF-8">
 <title>Workflow Template</title>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <style>
 
 body{
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
 background:#eef2f6;
 margin:0;
 padding:40px;
@@ -26,14 +27,13 @@ box-shadow:0 8px 30px rgba(0,0,0,0.08);
 
 h1{
 margin-top:0;
-font-size:28px;
 }
 
 .toolbar{
-margin-bottom:20px;
 display:flex;
 flex-wrap:wrap;
 gap:10px;
+margin-bottom:20px;
 }
 
 button{
@@ -44,71 +44,60 @@ cursor:pointer;
 font-weight:500;
 }
 
-button.primary{
-background:#2c7be5;
-color:white;
+.primary{background:#2c7be5;color:white;}
+.secondary{background:#6c757d;color:white;}
+.success{background:#28a745;color:white;}
+.danger{background:#e55353;color:white;}
+
+.stage-box{
+border:1px solid #e5e7eb;
+border-radius:10px;
+margin-bottom:20px;
+overflow:hidden;
 }
 
-button.secondary{
-background:#6c757d;
-color:white;
+.stage-header{
+background:#f6f8fb;
+padding:12px 16px;
+font-weight:600;
+display:flex;
+justify-content:space-between;
+align-items:center;
+cursor:pointer;
 }
 
-button.danger{
-background:#e55353;
-color:white;
-}
-
-button:hover{
-opacity:0.9;
+.stage-body{
+padding:10px;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
-overflow:hidden;
-border-radius:10px;
 }
 
-thead{
-background:#f5f7fa;
-position:sticky;
-top:0;
-}
-
-th{
-text-align:left;
-padding:14px;
-font-size:14px;
-color:#555;
-border-bottom:1px solid #e6e9ef;
-}
-
-td{
-padding:10px 12px;
-border-bottom:1px solid #f0f2f5;
-}
-
-tbody tr:nth-child(even){
-background:#fafbfc;
+th,td{
+padding:10px;
+border-bottom:1px solid #eee;
+vertical-align:top;
 }
 
 tbody tr:hover{
-background:#f1f6ff;
+background:#f4f8ff;
 }
 
 input{
 width:100%;
 border:none;
 background:transparent;
-font-size:14px;
 padding:4px;
+font-size:14px;
+white-space:normal;
+word-wrap:break-word;
 }
 
 input:focus{
 outline:none;
 background:#fff8dc;
-border-radius:4px;
 }
 
 .delete-btn{
@@ -118,32 +107,15 @@ border:none;
 padding:5px 10px;
 border-radius:5px;
 cursor:pointer;
-font-size:12px;
 }
 
-.delete-btn:hover{
-background:#d13c3c;
-}
-
-.stage-col{
-width:180px;
-}
-
-.step-col{
-width:100px;
-}
-
-.action-col{
-width:auto;
-}
-
-.delete-col{
-width:60px;
-text-align:center;
+.drag{
+cursor:grab;
+color:#888;
+font-size:16px;
 }
 
 </style>
-
 </head>
 
 
@@ -157,6 +129,8 @@ text-align:center;
 
 <button class="primary" onclick="addRow()">Add Row</button>
 
+<button class="success" onclick="sortByStep()">Auto Sort by Step</button>
+
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
 
 <button class="secondary" onclick="importBackup()">Import Backup</button>
@@ -169,32 +143,14 @@ text-align:center;
 
 </div>
 
-
-<table id="table">
-
-<thead>
-
-<tr>
-<th class="stage-col">Stage</th>
-<th class="step-col">Step</th>
-<th class="action-col">Action</th>
-<th class="delete-col"></th>
-</tr>
-
-</thead>
-
-<tbody></tbody>
-
-</table>
+<div id="workflow"></div>
 
 </div>
-
 
 
 <script>
 
 const STORAGE_KEY="workflow_template_data";
-
 let data=[];
 
 
@@ -220,33 +176,129 @@ localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
 }
 
 
+/* GROUP BY STAGE */
+
+function groupStages(){
+
+let groups={};
+
+data.forEach(row=>{
+if(!groups[row.stage]) groups[row.stage]=[];
+groups[row.stage].push(row);
+});
+
+return groups;
+
+}
+
+
 /* RENDER */
 
 function render(){
 
-let tbody=document.querySelector("#table tbody");
+let container=document.getElementById("workflow");
+container.innerHTML="";
 
-tbody.innerHTML="";
+let groups=groupStages();
 
-data.forEach((row,i)=>{
+Object.keys(groups).forEach(stage=>{
+
+let stageBox=document.createElement("div");
+stageBox.className="stage-box";
+
+let header=document.createElement("div");
+header.className="stage-header";
+header.innerHTML=`${stage || "Unassigned"} <span>▼</span>`;
+
+let body=document.createElement("div");
+body.className="stage-body";
+
+let table=document.createElement("table");
+
+table.innerHTML=`
+
+<thead>
+<tr>
+<th style="width:40px"></th>
+<th style="width:120px">Step</th>
+<th>Action</th>
+<th style="width:60px"></th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+`;
+
+let tbody=table.querySelector("tbody");
+
+groups[stage].forEach(row=>{
+
+let index=data.indexOf(row);
 
 let tr=document.createElement("tr");
+tr.dataset.index=index;
 
 tr.innerHTML=`
 
-<td><input value="${row.stage}" onchange="update(${i},'stage',this.value)"></td>
+<td class="drag">☰</td>
 
-<td><input value="${row.step}" onchange="update(${i},'step',this.value)"></td>
+<td>
+<input value="${row.step}" onchange="update(${index},'step',this.value)">
+</td>
 
-<td><input value="${row.action}" onchange="update(${i},'action',this.value)"></td>
+<td>
+<input value="${row.action}" onchange="update(${index},'action',this.value)">
+</td>
 
-<td style="text-align:center">
-<button class="delete-btn" onclick="deleteRow(${i})">✕</button>
+<td>
+<button class="delete-btn" onclick="deleteRow(${index})">✕</button>
 </td>
 
 `;
 
 tbody.appendChild(tr);
+
+});
+
+body.appendChild(table);
+stageBox.appendChild(header);
+stageBox.appendChild(body);
+container.appendChild(stageBox);
+
+
+/* COLLAPSE */
+
+header.onclick=()=>{
+body.style.display=body.style.display==="none"?"block":"none";
+};
+
+
+/* DRAG SORT */
+
+new Sortable(tbody,{
+animation:150,
+handle:".drag",
+onEnd:function(){
+
+let rows=[...tbody.querySelectorAll("tr")];
+
+let reordered=[];
+
+rows.forEach(r=>{
+let i=r.dataset.index;
+reordered.push(data[i]);
+});
+
+let others=data.filter(d=>d.stage!==stage);
+
+data=[...others,...reordered];
+
+save();
+render();
+
+}
+});
 
 });
 
@@ -269,7 +321,7 @@ render();
 }
 
 
-/* DELETE ROW */
+/* DELETE */
 
 function deleteRow(i){
 
@@ -283,16 +335,32 @@ render();
 
 /* UPDATE */
 
-function update(i,key,value){
+function update(i,key,val){
 
-data[i][key]=value;
+data[i][key]=val;
 
 save();
 
 }
 
 
-/* EXPORT BACKUP */
+/* AUTO SORT */
+
+function sortByStep(){
+
+data.sort((a,b)=>{
+
+return parseFloat(a.step) - parseFloat(b.step);
+
+});
+
+save();
+render();
+
+}
+
+
+/* EXPORT */
 
 function exportBackup(){
 
@@ -312,15 +380,13 @@ a.click();
 }
 
 
-/* IMPORT BACKUP */
+/* IMPORT */
 
 function importBackup(){
 
-let fileInput=document.getElementById("fileInput");
+let file=document.getElementById("fileInput");
 
-fileInput.onchange=function(e){
-
-let file=e.target.files[0];
+file.onchange=e=>{
 
 let reader=new FileReader();
 
@@ -333,42 +399,19 @@ render();
 
 };
 
-reader.readAsText(file);
+reader.readAsText(e.target.files[0]);
 
 };
 
-fileInput.click();
+file.click();
 
 }
 
 
-/* IMPORT TEMPLATE */
+/* TEMPLATE IMPORT */
 
 function importTemplate(){
-
-let fileInput=document.getElementById("fileInput");
-
-fileInput.onchange=function(e){
-
-let file=e.target.files[0];
-
-let reader=new FileReader();
-
-reader.onload=function(){
-
-data=JSON.parse(reader.result);
-
-save();
-render();
-
-};
-
-reader.readAsText(file);
-
-};
-
-fileInput.click();
-
+importBackup();
 }
 
 
@@ -390,7 +433,6 @@ render();
 load();
 
 </script>
-
 
 </body>
 </html>
