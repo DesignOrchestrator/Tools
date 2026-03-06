@@ -68,6 +68,21 @@ padding:14px 18px;
 font-weight:600;
 display:flex;
 justify-content:space-between;
+align-items:center;
+cursor:pointer;
+}
+
+.stage-progress{
+height:6px;
+background:#e6e9ef;
+margin-top:6px;
+border-radius:4px;
+overflow:hidden;
+}
+
+.stage-progress-bar{
+height:6px;
+background:#28a745;
 }
 
 /* TABLE */
@@ -100,6 +115,8 @@ white-space:normal;
 tbody tr:hover{
 background:#f3f7ff;
 }
+
+/* INPUT */
 
 input,select{
 width:100%;
@@ -239,6 +256,7 @@ stages.forEach((stage,stageIndex)=>{
 let rows=groups[stage]
 
 let completed=rows.filter(r=>r.status==="done").length
+let percent=Math.round((completed/rows.length)*100)||0
 
 let stageBox=document.createElement("div")
 stageBox.className="stage-box"
@@ -247,9 +265,17 @@ let header=document.createElement("div")
 header.className="stage-header"
 
 header.innerHTML=`
-<span>${stageIndex+1}. ${stage}</span>
-<span>${completed} / ${rows.length} completed</span>
+<div>
+${stageIndex+1}. ${stage}
+<div class="stage-progress">
+<div class="stage-progress-bar" style="width:${percent}%"></div>
+</div>
+</div>
+
+<div>${completed}/${rows.length}</div>
 `
+
+let body=document.createElement("div")
 
 let table=document.createElement("table")
 
@@ -277,7 +303,7 @@ rows.forEach((row,rowIndex)=>{
 
 let index=data.indexOf(row)
 
-let stepNumber=`${stageIndex+1}.${rowIndex+1}`
+let stepNumber=\`\${stageIndex+1}.\${rowIndex+1}\`
 
 let statusClass="status-not"
 
@@ -285,7 +311,7 @@ if(row.status==="progress") statusClass="status-progress"
 if(row.status==="done") statusClass="status-done"
 
 let stageOptions=getStages().map(s=>
-`<option ${s===row.stage?'selected':''}>${s}</option>`
+\`<option \${s===row.stage?'selected':''}>\${s}</option>\`
 ).join("")
 
 let tr=document.createElement("tr")
@@ -298,12 +324,10 @@ tr.innerHTML=`
 <td class="drag">☰</td>
 
 <td>
-
 <select onchange="update(${index},'stage',this.value)">
 <option value="">Unassigned</option>
 ${stageOptions}
 </select>
-
 </td>
 
 <td>${stepNumber}</td>
@@ -337,30 +361,31 @@ tbody.appendChild(tr)
 
 })
 
+body.appendChild(table)
+
 stageBox.appendChild(header)
-stageBox.appendChild(table)
+stageBox.appendChild(body)
 
 container.appendChild(stageBox)
 
-/* DRAG */
+/* COLLAPSE */
+
+header.onclick=()=>{
+
+body.style.display = body.style.display==="none" ? "block":"none"
+
+}
+
+/* DRAG FIX */
 
 new Sortable(tbody,{
 animation:150,
 handle:".drag",
-onEnd:function(){
+onEnd:function(evt){
 
-let rows=[...tbody.querySelectorAll("tr")]
+let moved=data.splice(evt.oldIndex + data.indexOf(rows[0]),1)[0]
 
-let reordered=[]
-
-rows.forEach(r=>{
-let i=r.dataset.index
-reordered.push(data[i])
-})
-
-let others=data.filter(d=>d.stage!==stage)
-
-data=[...others,...reordered]
+data.splice(evt.newIndex + data.indexOf(rows[0]),0,moved)
 
 save()
 render()
@@ -383,10 +408,10 @@ alert("Create a stage first")
 return
 }
 
-let stage=prompt("Enter stage name or choose existing:\n"+stages.join("\n"))
+let stage=prompt("Enter stage:\n"+stages.join("\n"))
 
 data.push({
-stage:stage || "",
+stage:stage||"",
 action:"",
 status:"not",
 ref:""
@@ -424,7 +449,6 @@ function update(i,key,val){
 data[i][key]=val
 
 save()
-render()
 
 }
 
