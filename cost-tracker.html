@@ -167,10 +167,10 @@ row.innerHTML=`
 
 <td><input type="date"></td>
 
-<td><input class="invoice"></td>
+<td><input class="invoice" oninput="calculate()"></td>
 
 <td>
-<select>
+<select onchange="calculate()">
 <option>Domain</option>
 <option>Hosting</option>
 <option>Email</option>
