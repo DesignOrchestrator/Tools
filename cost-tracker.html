@@ -157,112 +157,159 @@ Recurring
 
 <script>
 
-function addRow(){
+let data=[]
 
-let table=document.getElementById("costTable")
+function addRow(rowData={}){
 
-let row=table.insertRow()
-
-row.innerHTML=`
-
-<td><input type="date"></td>
-
-<td><input class="invoice" oninput="calculate()"></td>
-
-<td>
-<select onchange="calculate()">
-<option>Domain</option>
-<option>Hosting</option>
-<option>Email</option>
-<option>Software</option>
-<option>AI Tools</option>
-<option>Marketing</option>
-<option>Advertising</option>
-<option>Design</option>
-<option>Development</option>
-<option>Office</option>
-<option>Equipment</option>
-<option>Subscriptions</option>
-<option>Freelancers</option>
-<option>Contractors</option>
-<option>Legal</option>
-<option>Accounting</option>
-<option>Education</option>
-<option>Travel</option>
-<option>Utilities</option>
-<option>Tax</option>
-<option>Discount</option>
-<option>Misc</option>
-</select>
-</td>
-
-<td><input></td>
-
-<td><input></td>
-
-<td><input type="number" step="0.01" class="amount" oninput="calculate()"></td>
-
-<td>
-<select>
-<option>SGD</option>
-<option>USD</option>
-</select>
-</td>
-
-<td>
-<select class="type" onchange="calculate()">
-<option>One-time</option>
-<option>Monthly</option>
-<option>Yearly</option>
-</select>
-</td>
-
-<td><input></td>
-
-<td><button class="delete" onclick="deleteRow(this)">X</button></td>
-
-`
+data.push({
+date: rowData.date || "",
+invoice: rowData.invoice || "",
+category: rowData.category || "Domain",
+item: rowData.item || "",
+vendor: rowData.vendor || "",
+amount: rowData.amount || "",
+currency: rowData.currency || "SGD",
+type: rowData.type || "One-time",
+notes: rowData.notes || ""
+})
 
 saveData()
+render()
 
 }
 
-function deleteRow(btn){
+function deleteRow(index){
 
-btn.parentElement.parentElement.remove()
+data.splice(index,1)
+
+saveData()
+render()
+
+}
+
+function render(){
+
+let table=document.getElementById("costTable")
+
+table.innerHTML=`
+
+<tr>
+<th>Date</th>
+<th>Invoice</th>
+<th>Category</th>
+<th>Item</th>
+<th>Vendor</th>
+<th>Amount</th>
+<th>Currency</th>
+<th>Type</th>
+<th>Notes</th>
+<th>Del</th>
+</tr>
+`
+
+data.forEach((row,i)=>{
+
+let tr=document.createElement("tr")
+
+tr.innerHTML=`
+
+<td><input type="date" value="${row.date}" onchange="update(${i},'date',this.value)"></td>
+
+<td><input value="${row.invoice}" onchange="update(${i},'invoice',this.value)"></td>
+
+<td>
+<select onchange="update(${i},'category',this.value)">
+<option ${row.category=="Domain"?"selected":""}>Domain</option>
+<option ${row.category=="Hosting"?"selected":""}>Hosting</option>
+<option ${row.category=="Email"?"selected":""}>Email</option>
+<option ${row.category=="Software"?"selected":""}>Software</option>
+<option ${row.category=="AI Tools"?"selected":""}>AI Tools</option>
+<option ${row.category=="Marketing"?"selected":""}>Marketing</option>
+<option ${row.category=="Advertising"?"selected":""}>Advertising</option>
+<option ${row.category=="Design"?"selected":""}>Design</option>
+<option ${row.category=="Development"?"selected":""}>Development</option>
+<option ${row.category=="Office"?"selected":""}>Office</option>
+<option ${row.category=="Equipment"?"selected":""}>Equipment</option>
+<option ${row.category=="Subscriptions"?"selected":""}>Subscriptions</option>
+<option ${row.category=="Freelancers"?"selected":""}>Freelancers</option>
+<option ${row.category=="Contractors"?"selected":""}>Contractors</option>
+<option ${row.category=="Legal"?"selected":""}>Legal</option>
+<option ${row.category=="Accounting"?"selected":""}>Accounting</option>
+<option ${row.category=="Education"?"selected":""}>Education</option>
+<option ${row.category=="Travel"?"selected":""}>Travel</option>
+<option ${row.category=="Utilities"?"selected":""}>Utilities</option>
+<option ${row.category=="Tax"?"selected":""}>Tax</option>
+<option ${row.category=="Discount"?"selected":""}>Discount</option>
+<option ${row.category=="Misc"?"selected":""}>Misc</option>
+</select>
+</td>
+
+<td><input value="${row.item}" onchange="update(${i},'item',this.value)"></td>
+
+<td><input value="${row.vendor}" onchange="update(${i},'vendor',this.value)"></td>
+
+<td><input type="number" step="0.01" value="${row.amount}" onchange="update(${i},'amount',this.value)"></td>
+
+<td>
+<select onchange="update(${i},'currency',this.value)">
+<option ${row.currency=="SGD"?"selected":""}>SGD</option>
+<option ${row.currency=="USD"?"selected":""}>USD</option>
+</select>
+</td>
+
+<td>
+<select onchange="update(${i},'type',this.value)">
+<option ${row.type=="One-time"?"selected":""}>One-time</option>
+<option ${row.type=="Monthly"?"selected":""}>Monthly</option>
+<option ${row.type=="Yearly"?"selected":""}>Yearly</option>
+</select>
+</td>
+
+<td><input value="${row.notes}" onchange="update(${i},'notes',this.value)"></td>
+
+<td><button class="delete" onclick="deleteRow(${i})">X</button></td>
+
+`
+
+table.appendChild(tr)
+
+})
 
 calculate()
 
+}
+
+function update(i,key,value){
+
+data[i][key]=value
 saveData()
+calculate()
 
 }
 
 function calculate(){
 
-let amounts=document.querySelectorAll(".amount")
-let types=document.querySelectorAll(".type")
-let invoices=document.querySelectorAll(".invoice")
-
 let total=0
 let one=0
 let recurring=0
-
 let invoiceMap={}
 
-for(let i=0;i<amounts.length;i++){
+data.forEach(row=>{
 
-let val=parseFloat(amounts[i].value)||0
-let inv=invoices[i].value||"Unassigned"
+let val=parseFloat(row.amount)||0
 
 total+=val
 
-if(types[i].value=="One-time") one+=val
+if(row.type=="One-time") one+=val
 else recurring+=val
 
+let inv=row.invoice||"Unassigned"
+
 if(!invoiceMap[inv]) invoiceMap[inv]=0
+
 invoiceMap[inv]+=val
 
-}
+})
 
 document.getElementById("total").innerText=total.toFixed(2)
 document.getElementById("onetime").innerText=one.toFixed(2)
@@ -278,25 +325,23 @@ html+=inv+" → "+invoiceMap[inv].toFixed(2)+"<br>"
 
 document.getElementById("invoiceTotals").innerHTML=html
 
-saveData()
-
 }
 
 function saveData(){
 
-localStorage.setItem("businessCostTracker",document.getElementById("costTable").innerHTML)
+localStorage.setItem("businessCostTracker",JSON.stringify(data))
 
 }
 
 function loadData(){
 
-let data=localStorage.getItem("businessCostTracker")
+let stored=localStorage.getItem("businessCostTracker")
 
-if(data){
+if(stored){
 
-document.getElementById("costTable").innerHTML=data
+data=JSON.parse(stored)
 
-calculate()
+render()
 
 }
 
@@ -304,9 +349,7 @@ calculate()
 
 function exportBackup(){
 
-let data=localStorage.getItem("businessCostTracker")
-
-let blob=new Blob([data],{type:"application/json"})
+let blob=new Blob([JSON.stringify(data)],{type:"application/json"})
 
 let link=document.createElement("a")
 
@@ -332,9 +375,10 @@ let reader=new FileReader()
 
 reader.onload=function(e){
 
-localStorage.setItem("businessCostTracker",e.target.result)
+data=JSON.parse(e.target.result)
 
-loadData()
+saveData()
+render()
 
 }
 
