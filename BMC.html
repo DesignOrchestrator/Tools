@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Business Model Canvas</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -25,7 +24,6 @@ h1{
 text-align:center;
 margin-bottom:15px;
 font-size:32px;
-font-weight:700;
 }
 
 /* STICKY BANNER */
@@ -51,19 +49,13 @@ gap:12px;
 margin-bottom:12px;
 }
 
-/* BANNER TEXTAREA */
-
 .bannerbox{
 resize:vertical;
 min-height:40px;
-max-height:150px;
 border:1px solid #d1d5db;
 border-radius:8px;
 padding:8px;
 font-size:14px;
-line-height:1.4;
-overflow-wrap:break-word;
-white-space:pre-wrap;
 }
 
 /* TOOLBAR */
@@ -86,7 +78,7 @@ font-weight:600;
 cursor:pointer;
 }
 
-/* CANVAS */
+/* CANVAS GRID */
 
 .canvas{
 display:grid;
@@ -103,13 +95,11 @@ padding:12px;
 display:flex;
 flex-direction:column;
 box-shadow:0 4px 14px rgba(0,0,0,0.08);
-overflow:hidden;
 }
 
 .block h3{
 margin:0 0 6px 0;
 font-size:15px;
-font-weight:700;
 }
 
 /* DESCRIPTION */
@@ -150,17 +140,8 @@ grid-row:1 / span 2;
 background:#fef3c7;
 }
 
-.cr{
-grid-column:4;
-grid-row:1;
-background:#fbcfe8;
-}
-
-.ch{
-grid-column:5;
-grid-row:1;
-background:#e9d5ff;
-}
+.cr{grid-column:4;grid-row:1;background:#fbcfe8;}
+.ch{grid-column:5;grid-row:1;background:#e9d5ff;}
 
 .cs{
 grid-column:4 / span 2;
@@ -178,25 +159,6 @@ background:#fed7aa;
 grid-column:4 / span 2;
 grid-row:3;
 background:#bbf7d0;
-}
-
-/* MOBILE */
-
-@media(max-width:900px){
-
-.canvas{
-grid-template-columns:1fr;
-grid-template-rows:auto;
-}
-
-.block{
-min-height:250px;
-}
-
-.header{
-grid-template-columns:1fr 1fr;
-}
-
 }
 
 </style>
@@ -234,7 +196,63 @@ grid-template-columns:1fr 1fr;
 
 </div>
 
-<!-- Canvas remains same as previous version -->
+<div class="canvas">
+
+<div class="block kp">
+<h3>Key Partners</h3>
+<textarea class="desc" id="kp_desc"></textarea>
+<textarea class="notes" id="kp"></textarea>
+</div>
+
+<div class="block ka">
+<h3>Key Activities</h3>
+<textarea class="desc" id="ka_desc"></textarea>
+<textarea class="notes" id="ka"></textarea>
+</div>
+
+<div class="block kr">
+<h3>Key Resources</h3>
+<textarea class="desc" id="kr_desc"></textarea>
+<textarea class="notes" id="kr"></textarea>
+</div>
+
+<div class="block vp">
+<h3>Value Proposition</h3>
+<textarea class="desc" id="vp_desc"></textarea>
+<textarea class="notes" id="vp"></textarea>
+</div>
+
+<div class="block cr">
+<h3>Customer Relationships</h3>
+<textarea class="desc" id="cr_desc"></textarea>
+<textarea class="notes" id="cr"></textarea>
+</div>
+
+<div class="block ch">
+<h3>Channels</h3>
+<textarea class="desc" id="ch_desc"></textarea>
+<textarea class="notes" id="ch"></textarea>
+</div>
+
+<div class="block cs">
+<h3>Customer Segments</h3>
+<textarea class="desc" id="cs_desc"></textarea>
+<textarea class="notes" id="cs"></textarea>
+</div>
+
+<div class="block cost">
+<h3>Cost Structure</h3>
+<textarea class="desc" id="cost_desc"></textarea>
+<textarea class="notes" id="cost"></textarea>
+</div>
+
+<div class="block rev">
+<h3>Revenue Streams</h3>
+<textarea class="desc" id="rev_desc"></textarea>
+<textarea class="notes" id="rev"></textarea>
+</div>
+
+</div>
 
 </div>
 
@@ -242,64 +260,41 @@ grid-template-columns:1fr 1fr;
 
 const fields=[
 "project","company","founder","date","version",
-"kp_desc","kp",
-"ka_desc","ka",
-"kr_desc","kr",
-"vp_desc","vp",
-"cr_desc","cr",
-"ch_desc","ch",
-"cs_desc","cs",
-"cost_desc","cost",
-"rev_desc","rev"
+"kp_desc","kp","ka_desc","ka","kr_desc","kr",
+"vp_desc","vp","cr_desc","cr","ch_desc","ch",
+"cs_desc","cs","cost_desc","cost","rev_desc","rev"
 ]
 
 function saveData(){
-
 fields.forEach(id=>{
-let el=document.getElementById(id)
-if(el){
-localStorage.setItem(id,el.value)
-}
+localStorage.setItem(id,document.getElementById(id).value)
 })
-
 alert("Saved")
-
 }
 
 function loadData(){
-
 fields.forEach(id=>{
-let el=document.getElementById(id)
-if(el){
-el.value=localStorage.getItem(id)||""
-}
+document.getElementById(id).value=localStorage.getItem(id)||""
 })
-
 }
 
 function clearData(){
-
 if(confirm("Clear all data?")){
 localStorage.clear()
 location.reload()
 }
-
 }
 
 function exportBackup(){
 
 let data={}
-
 fields.forEach(id=>{
-let el=document.getElementById(id)
-if(el){
-data[id]=el.value
-}
+data[id]=document.getElementById(id).value
 })
 
 let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
-
 let link=document.createElement("a")
+
 link.href=URL.createObjectURL(blob)
 link.download="bmc_backup.json"
 link.click()
@@ -322,9 +317,8 @@ reader.onload=function(e){
 let data=JSON.parse(e.target.result)
 
 fields.forEach(id=>{
-let el=document.getElementById(id)
-if(el && data[id]!==undefined){
-el.value=data[id]
+if(data[id]!==undefined){
+document.getElementById(id).value=data[id]
 localStorage.setItem(id,data[id])
 }
 })
