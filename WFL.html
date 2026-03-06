@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Workflow Template</title>
+
+<style>
+
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f4f6f8;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:8px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+h1{
+margin-top:0;
+}
+
+.toolbar{
+margin-bottom:15px;
+}
+
+button{
+padding:8px 14px;
+margin-right:8px;
+border:none;
+background:#2c7be5;
+color:white;
+border-radius:4px;
+cursor:pointer;
+}
+
+button.secondary{
+background:#6c757d;
+}
+
+button.danger{
+background:#dc3545;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:8px;
+}
+
+th{
+background:#f0f0f0;
+}
+
+input{
+width:100%;
+border:none;
+outline:none;
+}
+
+.row-delete{
+background:#dc3545;
+color:white;
+border:none;
+padding:4px 8px;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Workflow Template</h1>
+
+<div class="toolbar">
+
+<button onclick="addRow()">Add Row</button>
+
+<button onclick="exportBackup()" class="secondary">Export Backup</button>
+
+<button onclick="importBackup()" class="secondary">Import Backup</button>
+
+<button onclick="importTemplate()" class="secondary">Import Template</button>
+
+<button onclick="clearData()" class="danger">Clear Data</button>
+
+<input type="file" id="fileInput" style="display:none">
+
+</div>
+
+<table id="table">
+
+<thead>
+<tr>
+<th style="width:120px">Stage</th>
+<th>Step</th>
+<th>Action</th>
+<th style="width:80px"></th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+const STORAGE_KEY="workflow_template_data";
+
+let data=[];
+
+/* ---------------- LOAD DATA ---------------- */
+
+function load(){
+
+let saved=localStorage.getItem(STORAGE_KEY);
+
+if(saved){
+data=JSON.parse(saved);
+}
+
+render();
+
+}
+
+function save(){
+
+localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+
+}
+
+/* ---------------- TABLE RENDER ---------------- */
+
+function render(){
+
+let tbody=document.querySelector("#table tbody");
+
+tbody.innerHTML="";
+
+data.forEach((row,i)=>{
+
+let tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td><input value="${row.stage}" onchange="update(${i},'stage',this.value)"></td>
+
+<td><input value="${row.step}" onchange="update(${i},'step',this.value)"></td>
+
+<td><input value="${row.action}" onchange="update(${i},'action',this.value)"></td>
+
+<td><button class="row-delete" onclick="deleteRow(${i})">X</button></td>
+
+`;
+
+tbody.appendChild(tr);
+
+});
+
+}
+
+/* ---------------- ROW ACTIONS ---------------- */
+
+function addRow(){
+
+data.push({
+stage:"",
+step:"",
+action:""
+});
+
+save();
+render();
+
+}
+
+function deleteRow(i){
+
+data.splice(i,1);
+
+save();
+render();
+
+}
+
+function update(i,key,value){
+
+data[i][key]=value;
+
+save();
+
+}
+
+/* ---------------- BACKUP EXPORT ---------------- */
+
+function exportBackup(){
+
+let blob=new Blob(
+[JSON.stringify(data,null,2)],
+{type:"application/json"}
+);
+
+let a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+
+a.download="workflow-backup.json";
+
+a.click();
+
+}
+
+/* ---------------- BACKUP IMPORT ---------------- */
+
+function importBackup(){
+
+let fileInput=document.getElementById("fileInput");
+
+fileInput.onchange=function(e){
+
+let file=e.target.files[0];
+
+let reader=new FileReader();
+
+reader.onload=function(){
+
+data=JSON.parse(reader.result);
+
+save();
+
+render();
+
+};
+
+reader.readAsText(file);
+
+};
+
+fileInput.click();
+
+}
+
+/* ---------------- TEMPLATE IMPORT ---------------- */
+
+function importTemplate(){
+
+let fileInput=document.getElementById("fileInput");
+
+fileInput.onchange=function(e){
+
+let file=e.target.files[0];
+
+let reader=new FileReader();
+
+reader.onload=function(){
+
+let template=JSON.parse(reader.result);
+
+data=template;
+
+save();
+
+render();
+
+};
+
+reader.readAsText(file);
+
+};
+
+fileInput.click();
+
+}
+
+/* ---------------- CLEAR ---------------- */
+
+function clearData(){
+
+if(confirm("Clear all data?")){
+
+data=[];
+
+save();
+
+render();
+
+}
+
+}
+
+/* ---------------- INIT ---------------- */
+
+load();
+
+</script>
+
+</body>
+</html>
