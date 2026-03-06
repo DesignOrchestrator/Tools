@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
@@ -13,23 +14,40 @@ body{
 font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
 background:#eef2f6;
 margin:0;
-padding:40px;
+padding:0;
 }
 
+/* MAIN CONTAINER */
+
 .container{
-max-width:1100px;
+max-width:1200px;
 margin:auto;
-background:white;
 padding:30px;
-border-radius:12px;
-box-shadow:0 8px 30px rgba(0,0,0,0.08);
 }
+
+/* HEADER */
+
+.topbar{
+
+position:sticky;
+top:0;
+background:white;
+z-index:100;
+padding:20px 30px;
+box-shadow:0 4px 12px rgba(0,0,0,0.05);
+
+}
+
+h1{
+margin:0 0 15px 0;
+}
+
+/* TOOLBAR */
 
 .toolbar{
 display:flex;
 flex-wrap:wrap;
 gap:10px;
-margin-bottom:20px;
 }
 
 button{
@@ -45,66 +63,118 @@ font-weight:500;
 .success{background:#28a745;color:white;}
 .danger{background:#e55353;color:white;}
 
+/* STAGE BOX */
+
 .stage-box{
-border:1px solid #e6e9ef;
+background:white;
 border-radius:10px;
-margin-bottom:20px;
+margin-top:25px;
+box-shadow:0 4px 18px rgba(0,0,0,0.05);
 overflow:hidden;
 }
 
+/* STAGE HEADER */
+
 .stage-header{
-background:#f6f8fb;
-padding:12px 16px;
+
+background:linear-gradient(90deg,#2c7be5,#4e8df5);
+color:white;
+padding:14px 18px;
 font-weight:600;
-display:flex;
-justify-content:space-between;
-align-items:center;
+font-size:16px;
+
 }
 
-.stage-body{
-padding:10px;
-}
+/* TABLE */
 
 table{
 width:100%;
 border-collapse:collapse;
+table-layout:fixed;
 }
 
-th,td{
+thead{
+
+background:#f6f8fb;
+position:sticky;
+top:120px;
+z-index:5;
+
+}
+
+th{
 padding:10px;
+text-align:left;
+font-size:13px;
+border-bottom:1px solid #eee;
+}
+
+td{
+padding:8px;
 border-bottom:1px solid #eee;
 vertical-align:top;
 }
 
-tbody tr:hover{
-background:#f3f7ff;
+/* TEXT WRAP */
+
+td,th,input{
+
+word-wrap:break-word;
+white-space:normal;
+
 }
 
-input,select{
+input{
 width:100%;
 border:none;
 background:transparent;
-padding:4px;
 font-size:14px;
 }
 
-input:focus,select:focus{
+input:focus{
 outline:none;
 background:#fff8dc;
+border-radius:4px;
 }
+
+/* COLUMN WIDTH */
+
+.col-drag{width:40px}
+.col-stage{width:180px}
+.col-step{width:90px}
+.col-ref{width:220px}
+.col-delete{width:60px}
+
+/* DRAG HANDLE */
 
 .drag{
 cursor:grab;
 color:#888;
 }
 
+/* DELETE BUTTON */
+
 .delete-btn{
 background:#e55353;
 color:white;
 border:none;
-padding:5px 10px;
+padding:5px 9px;
 border-radius:5px;
 cursor:pointer;
+}
+
+/* HOVER */
+
+tbody tr:hover{
+background:#f3f7ff;
+}
+
+/* LINK INPUT */
+
+.ref-link{
+
+color:#2c7be5;
+
 }
 
 </style>
@@ -114,7 +184,8 @@ cursor:pointer;
 
 <body>
 
-<div class="container">
+
+<div class="topbar">
 
 <h1>Workflow Template</h1>
 
@@ -138,10 +209,14 @@ cursor:pointer;
 
 </div>
 
+</div>
+
+
+<div class="container">
+
 <div id="workflow"></div>
 
 </div>
-
 
 
 <script>
@@ -149,8 +224,6 @@ cursor:pointer;
 const STORAGE_KEY="workflow_template_data"
 
 let data=[]
-
-/* LOAD */
 
 function load(){
 
@@ -164,26 +237,19 @@ render()
 
 }
 
-
-/* SAVE */
-
 function save(){
 localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 }
 
-
-/* GET STAGES */
+/* STAGES */
 
 function getStages(){
 
-let stages=[...new Set(data.map(d=>d.stage).filter(Boolean))]
-
-return stages
+return [...new Set(data.map(d=>d.stage).filter(Boolean))]
 
 }
 
-
-/* GROUP STAGES */
+/* GROUP */
 
 function groupStages(){
 
@@ -214,32 +280,41 @@ container.innerHTML=""
 
 let groups=groupStages()
 
-let stages=getStages()
+let stages=Object.keys(groups)
 
-Object.keys(groups).forEach(stage=>{
+stages.forEach((stage,index)=>{
+
+let stageNumber=index+1
 
 let stageBox=document.createElement("div")
 stageBox.className="stage-box"
 
 let header=document.createElement("div")
 header.className="stage-header"
-header.innerHTML=stage
-
-let body=document.createElement("div")
-body.className="stage-body"
+header.innerHTML=`${stageNumber}. ${stage}`
 
 let table=document.createElement("table")
 
 table.innerHTML=`
 
 <thead>
+
 <tr>
-<th style="width:40px"></th>
-<th style="width:180px">Stage</th>
-<th style="width:100px">Step</th>
+
+<th class="col-drag"></th>
+
+<th class="col-stage">Stage</th>
+
+<th class="col-step">Step</th>
+
 <th>Action</th>
-<th style="width:60px"></th>
+
+<th class="col-ref">Reference</th>
+
+<th class="col-delete"></th>
+
 </tr>
+
 </thead>
 
 <tbody></tbody>
@@ -252,30 +327,36 @@ groups[stage].forEach(row=>{
 
 let index=data.indexOf(row)
 
-let tr=document.createElement("tr")
-tr.dataset.index=index
-
-let stageOptions = getStages().map(s =>
+let stageOptions=getStages().map(s=>
 `<option ${s===row.stage?'selected':''}>${s}</option>`
 ).join("")
+
+let tr=document.createElement("tr")
+tr.dataset.index=index
 
 tr.innerHTML=`
 
 <td class="drag">☰</td>
 
 <td>
+
 <select onchange="update(${index},'stage',this.value)">
 <option value="">Unassigned</option>
 ${stageOptions}
 </select>
+
 </td>
 
 <td>
-<input value="${row.step}" onchange="update(${index},'step',this.value)">
+<input value="${row.step||""}" onchange="update(${index},'step',this.value)">
 </td>
 
 <td>
-<input value="${row.action}" onchange="update(${index},'action',this.value)">
+<input value="${row.action||""}" onchange="update(${index},'action',this.value)">
+</td>
+
+<td>
+<input class="ref-link" value="${row.ref||""}" placeholder="link / contract / template" onchange="update(${index},'ref',this.value)">
 </td>
 
 <td>
@@ -288,11 +369,11 @@ tbody.appendChild(tr)
 
 })
 
-body.appendChild(table)
 stageBox.appendChild(header)
-stageBox.appendChild(body)
+stageBox.appendChild(table)
 container.appendChild(stageBox)
 
+/* DRAG */
 
 new Sortable(tbody,{
 animation:150,
@@ -322,7 +403,6 @@ render()
 
 }
 
-
 /* ADD ROW */
 
 function addRow(){
@@ -330,14 +410,14 @@ function addRow(){
 data.push({
 stage:"",
 step:"",
-action:""
+action:"",
+ref:""
 })
 
 save()
 render()
 
 }
-
 
 /* ADD STAGE */
 
@@ -350,14 +430,14 @@ if(!name) return
 data.push({
 stage:name,
 step:"",
-action:""
+action:"",
+ref:""
 })
 
 save()
 render()
 
 }
-
 
 /* UPDATE */
 
@@ -367,10 +447,7 @@ data[i][key]=val
 
 save()
 
-render()
-
 }
-
 
 /* DELETE */
 
@@ -382,7 +459,6 @@ save()
 render()
 
 }
-
 
 /* SORT */
 
@@ -399,7 +475,6 @@ render()
 
 }
 
-
 /* EXPORT */
 
 function exportBackup(){
@@ -415,7 +490,6 @@ a.download="workflow-backup.json"
 a.click()
 
 }
-
 
 /* IMPORT */
 
@@ -444,13 +518,9 @@ file.click()
 
 }
 
-
-/* TEMPLATE IMPORT */
-
 function importTemplate(){
 importBackup()
 }
-
 
 /* CLEAR */
 
