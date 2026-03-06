@@ -3,7 +3,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Workflow System</title>
+<title>Workflow Template</title>
 
 <style>
 
@@ -13,7 +13,7 @@ background:#eef2f6;
 margin:0;
 }
 
-/* HEADER */
+/* TOP BAR */
 
 .topbar{
 position:sticky;
@@ -33,7 +33,6 @@ display:flex;
 flex-wrap:wrap;
 gap:8px;
 margin-top:8px;
-align-items:center;
 }
 
 button{
@@ -48,11 +47,6 @@ font-size:13px;
 .success{background:#28a745;color:white;}
 .secondary{background:#6c757d;color:white;}
 .danger{background:#e55353;color:white;}
-
-select.project-select{
-padding:6px;
-border-radius:6px;
-}
 
 /* DASHBOARD */
 
@@ -153,7 +147,7 @@ background:#fff8dc;
 outline:none;
 }
 
-/* STATUS */
+/* STATUS BALL */
 
 .status{
 display:flex;
@@ -171,9 +165,6 @@ border-radius:50%;
 .ball-yellow{background:#f5b301;}
 .ball-green{background:#28a745;}
 
-.row-done{background:#e6f7ec;}
-.row-progress{background:#fff6db;}
-
 .col-step{width:70px}
 .col-status{width:140px}
 .col-ref{width:200px}
@@ -189,6 +180,14 @@ cursor:pointer;
 font-size:12px;
 }
 
+.row-done{
+background:#e6f7ec;
+}
+
+.row-progress{
+background:#fff6db;
+}
+
 </style>
 </head>
 
@@ -196,18 +195,15 @@ font-size:12px;
 
 <div class="topbar">
 
-<h1>Workflow System</h1>
+<h1>Workflow Template</h1>
 
 <div class="toolbar">
 
-<select id="projectSelect" class="project-select" onchange="switchProject()"></select>
-
-<button class="success" onclick="addProject()">Add Project</button>
-
 <button class="primary" onclick="addRow()">Add Row</button>
-
+<button class="success" onclick="addStage()">Add Stage</button>
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
 <button class="secondary" onclick="importBackup()">Import Backup</button>
+<button class="secondary" onclick="importTemplate()">Import Template</button>
 <button class="danger" onclick="clearData()">Clear Data</button>
 
 <input type="file" id="fileInput" style="display:none">
@@ -226,101 +222,33 @@ font-size:12px;
 </div>
 
 <div class="container">
+
 <div id="workflow"></div>
+
 </div>
 
 <script>
 
-const STORAGE_KEY="workflow_projects"
-
-let db={
-projects:{},
-current:null
-}
-
-/* LOAD */
+const STORAGE_KEY="workflow_template_data"
+let data=[]
 
 function load(){
 
 let saved=localStorage.getItem(STORAGE_KEY)
 
 if(saved){
-db=JSON.parse(saved)
+data=JSON.parse(saved)
 }
 
-updateProjectSelector()
 render()
 
 }
 
 function save(){
-localStorage.setItem(STORAGE_KEY,JSON.stringify(db))
+localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 }
 
-/* PROJECTS */
-
-function updateProjectSelector(){
-
-let select=document.getElementById("projectSelect")
-select.innerHTML=""
-
-Object.keys(db.projects).forEach(name=>{
-
-let option=document.createElement("option")
-option.value=name
-option.textContent=name
-
-if(name===db.current) option.selected=true
-
-select.appendChild(option)
-
-})
-
-}
-
-function addProject(){
-
-let name=prompt("Project name")
-
-if(!name) return
-
-db.projects[name]=[]
-db.current=name
-
-save()
-updateProjectSelector()
-render()
-
-}
-
-function switchProject(){
-
-db.current=document.getElementById("projectSelect").value
-save()
-render()
-
-}
-
-/* WORKFLOW */
-
-function getData(){
-
-if(!db.current) return []
-
-return db.projects[db.current]
-
-}
-
-function setData(arr){
-
-db.projects[db.current]=arr
-save()
-
-}
-
-/* GROUP */
-
-function groupStages(data){
+function groupStages(){
 
 let groups={}
 
@@ -338,23 +266,12 @@ return groups
 
 }
 
-/* RENDER */
-
 function render(){
-
-let data=getData()
 
 let container=document.getElementById("workflow")
 container.innerHTML=""
 
-if(!db.current){
-
-container.innerHTML="<p>Create a project to begin.</p>"
-return
-
-}
-
-let groups=groupStages(data)
+let groups=groupStages()
 let stages=Object.keys(groups)
 
 /* DASHBOARD */
@@ -462,7 +379,8 @@ tr.innerHTML=`
 </td>
 
 <td>
-<input value="${row.ref||""}" onchange="update(${index},'ref',this.value)">
+<input value="${row.ref||""}" placeholder="link / contract / template"
+onchange="update(${index},'ref',this.value)">
 </td>
 
 <td>
@@ -481,6 +399,8 @@ stageBox.appendChild(body)
 
 container.appendChild(stageBox)
 
+/* COLLAPSE */
+
 header.onclick=()=>{
 body.style.display = body.style.display==="none" ? "block":"none"
 }
@@ -489,19 +409,10 @@ body.style.display = body.style.display==="none" ? "block":"none"
 
 }
 
-/* ACTIONS */
-
 function addRow(){
-
-if(!db.current){
-alert("Create project first")
-return
-}
 
 let stage=prompt("Stage name")
 if(!stage) return
-
-let data=getData()
 
 data.push({
 stage:stage,
@@ -510,36 +421,43 @@ status:"not",
 ref:""
 })
 
-setData(data)
+save()
+render()
+
+}
+
+function addStage(){
+
+let name=prompt("Stage name")
+if(!name) return
+
+data.push({
+stage:name,
+action:"",
+status:"not",
+ref:""
+})
+
+save()
 render()
 
 }
 
 function update(i,key,val){
-
-let data=getData()
 data[i][key]=val
-
-setData(data)
+save()
 render()
-
 }
 
 function deleteRow(i){
-
-let data=getData()
 data.splice(i,1)
-
-setData(data)
+save()
 render()
-
 }
-
-/* BACKUP */
 
 function exportBackup(){
 
-let blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"})
+let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
 let a=document.createElement("a")
 
 a.href=URL.createObjectURL(blob)
@@ -558,10 +476,8 @@ let reader=new FileReader()
 
 reader.onload=function(){
 
-db=JSON.parse(reader.result)
-
+data=JSON.parse(reader.result)
 save()
-updateProjectSelector()
 render()
 
 }
@@ -574,14 +490,16 @@ file.click()
 
 }
 
+function importTemplate(){
+importBackup()
+}
+
 function clearData(){
 
-if(confirm("Clear everything?")){
+if(confirm("Clear all data?")){
 
-db={projects:{},current:null}
-
+data=[]
 save()
-updateProjectSelector()
 render()
 
 }
