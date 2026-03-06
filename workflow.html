@@ -68,7 +68,6 @@ padding:14px 18px;
 font-weight:600;
 display:flex;
 justify-content:space-between;
-align-items:center;
 cursor:pointer;
 }
 
@@ -170,15 +169,10 @@ cursor:pointer;
 <div class="toolbar">
 
 <button class="primary" onclick="addRow()">Add Row</button>
-
 <button class="success" onclick="addStage()">Add Stage</button>
-
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
-
 <button class="secondary" onclick="importBackup()">Import Backup</button>
-
 <button class="secondary" onclick="importTemplate()">Import Template</button>
-
 <button class="danger" onclick="clearData()">Clear Data</button>
 
 <input type="file" id="fileInput" style="display:none">
@@ -196,7 +190,6 @@ cursor:pointer;
 <script>
 
 const STORAGE_KEY="workflow_template_data"
-
 let data=[]
 
 function load(){
@@ -337,13 +330,11 @@ ${stageOptions}
 </td>
 
 <td>
-
 <select onchange="update(${index},'status',this.value)">
 <option value="not" ${row.status==="not"?'selected':''}>⬜ Not Started</option>
 <option value="progress" ${row.status==="progress"?'selected':''}>🟡 In Progress</option>
 <option value="done" ${row.status==="done"?'selected':''}>🟢 Completed</option>
 </select>
-
 </td>
 
 <td>
@@ -371,21 +362,18 @@ container.appendChild(stageBox)
 /* COLLAPSE */
 
 header.onclick=()=>{
-
 body.style.display = body.style.display==="none" ? "block":"none"
-
 }
 
-/* DRAG FIX */
+/* DRAG */
 
 new Sortable(tbody,{
 animation:150,
 handle:".drag",
 onEnd:function(evt){
 
-let moved=data.splice(evt.oldIndex + data.indexOf(rows[0]),1)[0]
-
-data.splice(evt.newIndex + data.indexOf(rows[0]),0,moved)
+let moved = rows.splice(evt.oldIndex,1)[0]
+rows.splice(evt.newIndex,0,moved)
 
 save()
 render()
