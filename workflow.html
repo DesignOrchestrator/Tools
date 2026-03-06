@@ -15,7 +15,7 @@ background:#eef2f6;
 margin:0;
 }
 
-/* TOP BAR */
+/* HEADER */
 
 .topbar{
 position:sticky;
@@ -45,8 +45,6 @@ font-weight:500;
 .success{background:#28a745;color:white;}
 .danger{background:#e55353;color:white;}
 
-/* CONTAINER */
-
 .container{
 max-width:1250px;
 margin:auto;
@@ -62,8 +60,6 @@ margin-top:25px;
 box-shadow:0 4px 18px rgba(0,0,0,0.05);
 overflow:hidden;
 }
-
-/* STAGE HEADER */
 
 .stage-header{
 background:linear-gradient(90deg,#2c7be5,#4e8df5);
@@ -98,13 +94,12 @@ padding:10px;
 border-bottom:1px solid #eee;
 vertical-align:top;
 word-wrap:break-word;
+white-space:normal;
 }
 
 tbody tr:hover{
 background:#f3f7ff;
 }
-
-/* INPUT */
 
 input,select{
 width:100%;
@@ -122,7 +117,7 @@ border-radius:4px;
 /* COLUMNS */
 
 .col-drag{width:40px}
-.col-stage{width:170px}
+.col-stage{width:180px}
 .col-step{width:80px}
 .col-status{width:150px}
 .col-ref{width:220px}
@@ -151,7 +146,6 @@ cursor:pointer;
 
 <body>
 
-
 <div class="topbar">
 
 <h1>Workflow Template</h1>
@@ -176,13 +170,11 @@ cursor:pointer;
 
 </div>
 
-
 <div class="container">
 
 <div id="workflow"></div>
 
 </div>
-
 
 <script>
 
@@ -204,6 +196,12 @@ render()
 
 function save(){
 localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
+}
+
+/* GET STAGES */
+
+function getStages(){
+return [...new Set(data.map(d=>d.stage).filter(Boolean))]
 }
 
 /* GROUP STAGES */
@@ -234,7 +232,6 @@ let container=document.getElementById("workflow")
 container.innerHTML=""
 
 let groups=groupStages()
-
 let stages=Object.keys(groups)
 
 stages.forEach((stage,stageIndex)=>{
@@ -247,7 +244,6 @@ let stageBox=document.createElement("div")
 stageBox.className="stage-box"
 
 let header=document.createElement("div")
-
 header.className="stage-header"
 
 header.innerHTML=`
@@ -260,7 +256,6 @@ let table=document.createElement("table")
 table.innerHTML=`
 
 <thead>
-
 <tr>
 <th class="col-drag"></th>
 <th class="col-stage">Stage</th>
@@ -270,7 +265,6 @@ table.innerHTML=`
 <th class="col-ref">Reference</th>
 <th class="col-delete"></th>
 </tr>
-
 </thead>
 
 <tbody></tbody>
@@ -290,6 +284,10 @@ let statusClass="status-not"
 if(row.status==="progress") statusClass="status-progress"
 if(row.status==="done") statusClass="status-done"
 
+let stageOptions=getStages().map(s=>
+`<option ${s===row.stage?'selected':''}>${s}</option>`
+).join("")
+
 let tr=document.createElement("tr")
 
 tr.dataset.index=index
@@ -300,12 +298,15 @@ tr.innerHTML=`
 <td class="drag">☰</td>
 
 <td>
-<input value="${row.stage||""}" onchange="update(${index},'stage',this.value)">
+
+<select onchange="update(${index},'stage',this.value)">
+<option value="">Unassigned</option>
+${stageOptions}
+</select>
+
 </td>
 
-<td>
-${stepNumber}
-</td>
+<td>${stepNumber}</td>
 
 <td>
 <input value="${row.action||""}" onchange="update(${index},'action',this.value)">
@@ -314,13 +315,9 @@ ${stepNumber}
 <td>
 
 <select onchange="update(${index},'status',this.value)">
-
 <option value="not" ${row.status==="not"?'selected':''}>⬜ Not Started</option>
-
 <option value="progress" ${row.status==="progress"?'selected':''}>🟡 In Progress</option>
-
 <option value="done" ${row.status==="done"?'selected':''}>🟢 Completed</option>
-
 </select>
 
 </td>
@@ -379,8 +376,17 @@ render()
 
 function addRow(){
 
+let stages=getStages()
+
+if(stages.length===0){
+alert("Create a stage first")
+return
+}
+
+let stage=prompt("Enter stage name or choose existing:\n"+stages.join("\n"))
+
 data.push({
-stage:"",
+stage:stage || "",
 action:"",
 status:"not",
 ref:""
@@ -418,6 +424,7 @@ function update(i,key,val){
 data[i][key]=val
 
 save()
+render()
 
 }
 
