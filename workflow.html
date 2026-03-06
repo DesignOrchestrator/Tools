@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+
 <meta charset="UTF-8">
 <title>Workflow Template</title>
 
@@ -25,10 +25,6 @@ border-radius:12px;
 box-shadow:0 8px 30px rgba(0,0,0,0.08);
 }
 
-h1{
-margin-top:0;
-}
-
 .toolbar{
 display:flex;
 flex-wrap:wrap;
@@ -37,7 +33,7 @@ margin-bottom:20px;
 }
 
 button{
-padding:9px 14px;
+padding:8px 14px;
 border:none;
 border-radius:6px;
 cursor:pointer;
@@ -50,7 +46,7 @@ font-weight:500;
 .danger{background:#e55353;color:white;}
 
 .stage-box{
-border:1px solid #e5e7eb;
+border:1px solid #e6e9ef;
 border-radius:10px;
 margin-bottom:20px;
 overflow:hidden;
@@ -63,7 +59,6 @@ font-weight:600;
 display:flex;
 justify-content:space-between;
 align-items:center;
-cursor:pointer;
 }
 
 .stage-body{
@@ -82,22 +77,25 @@ vertical-align:top;
 }
 
 tbody tr:hover{
-background:#f4f8ff;
+background:#f3f7ff;
 }
 
-input{
+input,select{
 width:100%;
 border:none;
 background:transparent;
 padding:4px;
 font-size:14px;
-white-space:normal;
-word-wrap:break-word;
 }
 
-input:focus{
+input:focus,select:focus{
 outline:none;
 background:#fff8dc;
+}
+
+.drag{
+cursor:grab;
+color:#888;
 }
 
 .delete-btn{
@@ -109,13 +107,8 @@ border-radius:5px;
 cursor:pointer;
 }
 
-.drag{
-cursor:grab;
-color:#888;
-font-size:16px;
-}
-
 </style>
+
 </head>
 
 
@@ -129,7 +122,9 @@ font-size:16px;
 
 <button class="primary" onclick="addRow()">Add Row</button>
 
-<button class="success" onclick="sortByStep()">Auto Sort by Step</button>
+<button class="success" onclick="addStage()">Add Stage</button>
+
+<button class="secondary" onclick="sortByStep()">Auto Sort by Step</button>
 
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
 
@@ -148,23 +143,24 @@ font-size:16px;
 </div>
 
 
+
 <script>
 
-const STORAGE_KEY="workflow_template_data";
-let data=[];
+const STORAGE_KEY="workflow_template_data"
 
+let data=[]
 
 /* LOAD */
 
 function load(){
 
-let saved=localStorage.getItem(STORAGE_KEY);
+let saved=localStorage.getItem(STORAGE_KEY)
 
 if(saved){
-data=JSON.parse(saved);
+data=JSON.parse(saved)
 }
 
-render();
+render()
 
 }
 
@@ -172,22 +168,38 @@ render();
 /* SAVE */
 
 function save(){
-localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 }
 
 
-/* GROUP BY STAGE */
+/* GET STAGES */
+
+function getStages(){
+
+let stages=[...new Set(data.map(d=>d.stage).filter(Boolean))]
+
+return stages
+
+}
+
+
+/* GROUP STAGES */
 
 function groupStages(){
 
-let groups={};
+let groups={}
 
 data.forEach(row=>{
-if(!groups[row.stage]) groups[row.stage]=[];
-groups[row.stage].push(row);
-});
 
-return groups;
+let stage=row.stage || "Unassigned"
+
+if(!groups[stage]) groups[stage]=[]
+
+groups[stage].push(row)
+
+})
+
+return groups
 
 }
 
@@ -196,31 +208,35 @@ return groups;
 
 function render(){
 
-let container=document.getElementById("workflow");
-container.innerHTML="";
+let container=document.getElementById("workflow")
 
-let groups=groupStages();
+container.innerHTML=""
+
+let groups=groupStages()
+
+let stages=getStages()
 
 Object.keys(groups).forEach(stage=>{
 
-let stageBox=document.createElement("div");
-stageBox.className="stage-box";
+let stageBox=document.createElement("div")
+stageBox.className="stage-box"
 
-let header=document.createElement("div");
-header.className="stage-header";
-header.innerHTML=`${stage || "Unassigned"} <span>▼</span>`;
+let header=document.createElement("div")
+header.className="stage-header"
+header.innerHTML=stage
 
-let body=document.createElement("div");
-body.className="stage-body";
+let body=document.createElement("div")
+body.className="stage-body"
 
-let table=document.createElement("table");
+let table=document.createElement("table")
 
 table.innerHTML=`
 
 <thead>
 <tr>
 <th style="width:40px"></th>
-<th style="width:120px">Step</th>
+<th style="width:180px">Stage</th>
+<th style="width:100px">Step</th>
 <th>Action</th>
 <th style="width:60px"></th>
 </tr>
@@ -228,20 +244,31 @@ table.innerHTML=`
 
 <tbody></tbody>
 
-`;
+`
 
-let tbody=table.querySelector("tbody");
+let tbody=table.querySelector("tbody")
 
 groups[stage].forEach(row=>{
 
-let index=data.indexOf(row);
+let index=data.indexOf(row)
 
-let tr=document.createElement("tr");
-tr.dataset.index=index;
+let tr=document.createElement("tr")
+tr.dataset.index=index
+
+let stageOptions = getStages().map(s =>
+`<option ${s===row.stage?'selected':''}>${s}</option>`
+).join("")
 
 tr.innerHTML=`
 
 <td class="drag">☰</td>
+
+<td>
+<select onchange="update(${index},'stage',this.value)">
+<option value="">Unassigned</option>
+${stageOptions}
+</select>
+</td>
 
 <td>
 <input value="${row.step}" onchange="update(${index},'step',this.value)">
@@ -255,52 +282,43 @@ tr.innerHTML=`
 <button class="delete-btn" onclick="deleteRow(${index})">✕</button>
 </td>
 
-`;
+`
 
-tbody.appendChild(tr);
+tbody.appendChild(tr)
 
-});
+})
 
-body.appendChild(table);
-stageBox.appendChild(header);
-stageBox.appendChild(body);
-container.appendChild(stageBox);
+body.appendChild(table)
+stageBox.appendChild(header)
+stageBox.appendChild(body)
+container.appendChild(stageBox)
 
-
-/* COLLAPSE */
-
-header.onclick=()=>{
-body.style.display=body.style.display==="none"?"block":"none";
-};
-
-
-/* DRAG SORT */
 
 new Sortable(tbody,{
 animation:150,
 handle:".drag",
 onEnd:function(){
 
-let rows=[...tbody.querySelectorAll("tr")];
+let rows=[...tbody.querySelectorAll("tr")]
 
-let reordered=[];
+let reordered=[]
 
 rows.forEach(r=>{
-let i=r.dataset.index;
-reordered.push(data[i]);
-});
+let i=r.dataset.index
+reordered.push(data[i])
+})
 
-let others=data.filter(d=>d.stage!==stage);
+let others=data.filter(d=>d.stage!==stage)
 
-data=[...others,...reordered];
+data=[...others,...reordered]
 
-save();
-render();
+save()
+render()
 
 }
-});
+})
 
-});
+})
 
 }
 
@@ -313,22 +331,30 @@ data.push({
 stage:"",
 step:"",
 action:""
-});
+})
 
-save();
-render();
+save()
+render()
 
 }
 
 
-/* DELETE */
+/* ADD STAGE */
 
-function deleteRow(i){
+function addStage(){
 
-data.splice(i,1);
+let name=prompt("Stage name")
 
-save();
-render();
+if(!name) return
+
+data.push({
+stage:name,
+step:"",
+action:""
+})
+
+save()
+render()
 
 }
 
@@ -337,25 +363,39 @@ render();
 
 function update(i,key,val){
 
-data[i][key]=val;
+data[i][key]=val
 
-save();
+save()
+
+render()
 
 }
 
 
-/* AUTO SORT */
+/* DELETE */
+
+function deleteRow(i){
+
+data.splice(i,1)
+
+save()
+render()
+
+}
+
+
+/* SORT */
 
 function sortByStep(){
 
 data.sort((a,b)=>{
 
-return parseFloat(a.step) - parseFloat(b.step);
+return parseFloat(a.step||0)-parseFloat(b.step||0)
 
-});
+})
 
-save();
-render();
+save()
+render()
 
 }
 
@@ -364,18 +404,15 @@ render();
 
 function exportBackup(){
 
-let blob=new Blob(
-[JSON.stringify(data,null,2)],
-{type:"application/json"}
-);
+let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
 
-let a=document.createElement("a");
+let a=document.createElement("a")
 
-a.href=URL.createObjectURL(blob);
+a.href=URL.createObjectURL(blob)
 
-a.download="workflow-backup.json";
+a.download="workflow-backup.json"
 
-a.click();
+a.click()
 
 }
 
@@ -384,26 +421,26 @@ a.click();
 
 function importBackup(){
 
-let file=document.getElementById("fileInput");
+let file=document.getElementById("fileInput")
 
 file.onchange=e=>{
 
-let reader=new FileReader();
+let reader=new FileReader()
 
 reader.onload=function(){
 
-data=JSON.parse(reader.result);
+data=JSON.parse(reader.result)
 
-save();
-render();
+save()
+render()
 
-};
+}
 
-reader.readAsText(e.target.files[0]);
+reader.readAsText(e.target.files[0])
 
-};
+}
 
-file.click();
+file.click()
 
 }
 
@@ -411,7 +448,7 @@ file.click();
 /* TEMPLATE IMPORT */
 
 function importTemplate(){
-importBackup();
+importBackup()
 }
 
 
@@ -421,16 +458,15 @@ function clearData(){
 
 if(confirm("Clear all data?")){
 
-data=[];
-save();
-render();
+data=[]
+save()
+render()
 
 }
 
 }
 
-
-load();
+load()
 
 </script>
 
