@@ -1,83 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
 <title>Workflow Template</title>
 
 <style>
 
 body{
-font-family:Arial,Helvetica,sans-serif;
-background:#f4f6f8;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+background:#eef2f6;
 margin:0;
-padding:20px;
+padding:40px;
 }
 
 .container{
-max-width:1200px;
+max-width:1100px;
 margin:auto;
 background:white;
-padding:20px;
-border-radius:8px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
+padding:30px;
+border-radius:12px;
+box-shadow:0 8px 30px rgba(0,0,0,0.08);
 }
 
 h1{
 margin-top:0;
+font-size:28px;
 }
 
 .toolbar{
-margin-bottom:15px;
+margin-bottom:20px;
+display:flex;
+flex-wrap:wrap;
+gap:10px;
 }
 
 button{
-padding:8px 14px;
-margin-right:8px;
+padding:9px 14px;
 border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:500;
+}
+
+button.primary{
 background:#2c7be5;
 color:white;
-border-radius:4px;
-cursor:pointer;
 }
 
 button.secondary{
 background:#6c757d;
+color:white;
 }
 
 button.danger{
-background:#dc3545;
+background:#e55353;
+color:white;
+}
+
+button:hover{
+opacity:0.9;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
+overflow:hidden;
+border-radius:10px;
 }
 
-th,td{
-border:1px solid #ddd;
-padding:8px;
+thead{
+background:#f5f7fa;
+position:sticky;
+top:0;
 }
 
 th{
-background:#f0f0f0;
+text-align:left;
+padding:14px;
+font-size:14px;
+color:#555;
+border-bottom:1px solid #e6e9ef;
+}
+
+td{
+padding:10px 12px;
+border-bottom:1px solid #f0f2f5;
+}
+
+tbody tr:nth-child(even){
+background:#fafbfc;
+}
+
+tbody tr:hover{
+background:#f1f6ff;
 }
 
 input{
 width:100%;
 border:none;
-outline:none;
+background:transparent;
+font-size:14px;
+padding:4px;
 }
 
-.row-delete{
-background:#dc3545;
+input:focus{
+outline:none;
+background:#fff8dc;
+border-radius:4px;
+}
+
+.delete-btn{
+background:#e55353;
 color:white;
 border:none;
-padding:4px 8px;
+padding:5px 10px;
+border-radius:5px;
 cursor:pointer;
+font-size:12px;
+}
+
+.delete-btn:hover{
+background:#d13c3c;
+}
+
+.stage-col{
+width:180px;
+}
+
+.step-col{
+width:100px;
+}
+
+.action-col{
+width:auto;
+}
+
+.delete-col{
+width:60px;
+text-align:center;
 }
 
 </style>
+
 </head>
+
 
 <body>
 
@@ -87,29 +155,32 @@ cursor:pointer;
 
 <div class="toolbar">
 
-<button onclick="addRow()">Add Row</button>
+<button class="primary" onclick="addRow()">Add Row</button>
 
-<button onclick="exportBackup()" class="secondary">Export Backup</button>
+<button class="secondary" onclick="exportBackup()">Export Backup</button>
 
-<button onclick="importBackup()" class="secondary">Import Backup</button>
+<button class="secondary" onclick="importBackup()">Import Backup</button>
 
-<button onclick="importTemplate()" class="secondary">Import Template</button>
+<button class="secondary" onclick="importTemplate()">Import Template</button>
 
-<button onclick="clearData()" class="danger">Clear Data</button>
+<button class="danger" onclick="clearData()">Clear Data</button>
 
 <input type="file" id="fileInput" style="display:none">
 
 </div>
 
+
 <table id="table">
 
 <thead>
+
 <tr>
-<th style="width:120px">Stage</th>
-<th>Step</th>
-<th>Action</th>
-<th style="width:80px"></th>
+<th class="stage-col">Stage</th>
+<th class="step-col">Step</th>
+<th class="action-col">Action</th>
+<th class="delete-col"></th>
 </tr>
+
 </thead>
 
 <tbody></tbody>
@@ -118,13 +189,16 @@ cursor:pointer;
 
 </div>
 
+
+
 <script>
 
 const STORAGE_KEY="workflow_template_data";
 
 let data=[];
 
-/* ---------------- LOAD DATA ---------------- */
+
+/* LOAD */
 
 function load(){
 
@@ -138,13 +212,15 @@ render();
 
 }
 
+
+/* SAVE */
+
 function save(){
-
 localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
-
 }
 
-/* ---------------- TABLE RENDER ---------------- */
+
+/* RENDER */
 
 function render(){
 
@@ -164,7 +240,9 @@ tr.innerHTML=`
 
 <td><input value="${row.action}" onchange="update(${i},'action',this.value)"></td>
 
-<td><button class="row-delete" onclick="deleteRow(${i})">X</button></td>
+<td style="text-align:center">
+<button class="delete-btn" onclick="deleteRow(${i})">✕</button>
+</td>
 
 `;
 
@@ -174,7 +252,8 @@ tbody.appendChild(tr);
 
 }
 
-/* ---------------- ROW ACTIONS ---------------- */
+
+/* ADD ROW */
 
 function addRow(){
 
@@ -189,6 +268,9 @@ render();
 
 }
 
+
+/* DELETE ROW */
+
 function deleteRow(i){
 
 data.splice(i,1);
@@ -198,6 +280,9 @@ render();
 
 }
 
+
+/* UPDATE */
+
 function update(i,key,value){
 
 data[i][key]=value;
@@ -206,7 +291,8 @@ save();
 
 }
 
-/* ---------------- BACKUP EXPORT ---------------- */
+
+/* EXPORT BACKUP */
 
 function exportBackup(){
 
@@ -225,7 +311,8 @@ a.click();
 
 }
 
-/* ---------------- BACKUP IMPORT ---------------- */
+
+/* IMPORT BACKUP */
 
 function importBackup(){
 
@@ -242,7 +329,6 @@ reader.onload=function(){
 data=JSON.parse(reader.result);
 
 save();
-
 render();
 
 };
@@ -255,7 +341,8 @@ fileInput.click();
 
 }
 
-/* ---------------- TEMPLATE IMPORT ---------------- */
+
+/* IMPORT TEMPLATE */
 
 function importTemplate(){
 
@@ -269,12 +356,9 @@ let reader=new FileReader();
 
 reader.onload=function(){
 
-let template=JSON.parse(reader.result);
-
-data=template;
+data=JSON.parse(reader.result);
 
 save();
-
 render();
 
 };
@@ -287,27 +371,26 @@ fileInput.click();
 
 }
 
-/* ---------------- CLEAR ---------------- */
+
+/* CLEAR */
 
 function clearData(){
 
 if(confirm("Clear all data?")){
 
 data=[];
-
 save();
-
 render();
 
 }
 
 }
 
-/* ---------------- INIT ---------------- */
 
 load();
 
 </script>
+
 
 </body>
 </html>
