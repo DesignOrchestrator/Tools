@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Opportunity Tracker</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<style>
+
+body{
+font-family:Segoe UI,system-ui;
+background:#f4f6fb;
+margin:0;
+padding:15px;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+background:white;
+padding:18px;
+border-radius:12px;
+box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+h1{
+text-align:center;
+margin:0 0 12px 0;
+font-size:22px;
+}
+
+.dashboard{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:8px;
+margin-bottom:12px;
+}
+
+.card{
+background:#eef2f8;
+border-radius:8px;
+padding:8px;
+text-align:center;
+font-size:12px;
+}
+
+.card b{
+font-size:16px;
+}
+
+.tabs{
+display:flex;
+gap:6px;
+margin-bottom:10px;
+}
+
+.tab{
+flex:1;
+text-align:center;
+padding:6px;
+background:#e5e9f2;
+border-radius:6px;
+cursor:pointer;
+font-size:13px;
+}
+
+.tab.active{
+background:#2ecc71;
+color:white;
+}
+
+.controls{
+display:flex;
+justify-content:space-between;
+margin-bottom:8px;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.search{
+flex:1;
+min-width:120px;
+padding:6px;
+border-radius:6px;
+border:1px solid #ddd;
+}
+
+button{
+border:none;
+border-radius:6px;
+padding:6px 10px;
+font-size:12px;
+cursor:pointer;
+}
+
+.add-btn{background:#2ecc71;color:white;}
+.export-btn{background:#3498db;color:white;}
+.backup-btn{background:#8e44ad;color:white;}
+.import-btn{background:#f39c12;color:white;}
+.delete-btn{background:#e74c3c;color:white;}
+
+.table-wrap{
+overflow-x:auto;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+font-size:12px;
+}
+
+th,td{
+padding:6px;
+border-bottom:1px solid #eee;
+}
+
+th{
+background:#f4f6fb;
+}
+
+input,select{
+width:100%;
+font-size:12px;
+padding:4px;
+border:1px solid #ddd;
+border-radius:4px;
+}
+
+.followup-panel{
+background:#fff7d6;
+padding:10px;
+border-radius:8px;
+margin-top:10px;
+font-size:13px;
+}
+
+.kanban{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:10px;
+margin-top:15px;
+}
+
+.column{
+background:#f1f4fa;
+padding:8px;
+border-radius:8px;
+min-height:120px;
+}
+
+.card-item{
+background:white;
+padding:6px;
+border-radius:6px;
+margin-bottom:6px;
+font-size:12px;
+cursor:grab;
+}
+
+.chart-area{
+margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Opportunity Tracker</h1>
+
+<div class="dashboard">
+
+<div class="card">Total<br><b id="total">0</b></div>
+<div class="card">Jobs<br><b id="jobs">0</b></div>
+<div class="card">Freelance<br><b id="freelance">0</b></div>
+<div class="card">Clients<br><b id="clients">0</b></div>
+
+</div>
+
+<div class="tabs">
+<div class="tab active" onclick="switchTab('jobs',this)">Jobs</div>
+<div class="tab" onclick="switchTab('freelance',this)">Freelance</div>
+<div class="tab" onclick="switchTab('clients',this)">Clients</div>
+</div>
+
+<div class="controls">
+
+<input class="search" id="search" placeholder="Search..." oninput="render()">
+
+<div>
+<button class="add-btn" onclick="addRow()">Add</button>
+<button class="export-btn" onclick="exportCSV()">Export CSV</button>
+<button class="backup-btn" onclick="exportBackup()">Export Backup</button>
+<button class="import-btn" onclick="document.getElementById('importFile').click()">Import Backup</button>
+<input type="file" id="importFile" hidden onchange="importBackup(event)">
+</div>
+
+</div>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Name</th>
+<th>Role</th>
+<th>Country</th>
+<th>Source</th>
+<th>Date</th>
+<th>Status</th>
+<th>Link</th>
+<th>Notes</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody id="table"></tbody>
+
+</table>
+
+</div>
+
+<div class="followup-panel" id="followups">
+<b>Follow-ups needed:</b>
+<div id="followList"></div>
+</div>
+
+<div class="kanban" id="kanban"></div>
+
+<div class="chart-area">
+<canvas id="countryChart"></canvas>
+</div>
+
+</div>
+
+<script>
+
+let currentTab="jobs"
+
+let data={
+jobs:JSON.parse(localStorage.getItem("jobs")||"[]"),
+freelance:JSON.parse(localStorage.getItem("freelance")||"[]"),
+clients:JSON.parse(localStorage.getItem("clients")||"[]")
+}
+
+function save(){
+
+localStorage.setItem("jobs",JSON.stringify(data.jobs))
+localStorage.setItem("freelance",JSON.stringify(data.freelance))
+localStorage.setItem("clients",JSON.stringify(data.clients))
+
+updateStats()
+
+}
+
+function updateStats(){
+
+let total=data.jobs.length+data.freelance.length+data.clients.length
+
+document.getElementById("total").innerText=total
+document.getElementById("jobs").innerText=data.jobs.length
+document.getElementById("freelance").innerText=data.freelance.length
+document.getElementById("clients").innerText=data.clients.length
+
+}
+
+function switchTab(tab,el){
+
+currentTab=tab
+
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+el.classList.add("active")
+
+render()
+
+}
+
+function render(){
+
+let search=document.getElementById("search").value.toLowerCase()
+
+let tbody=document.getElementById("table")
+
+tbody.innerHTML=""
+
+let followHTML=""
+
+data[currentTab].forEach((item,index)=>{
+
+if(JSON.stringify(item).toLowerCase().includes(search)==false) return
+
+let row=document.createElement("tr")
+
+if(item.date){
+
+let diff=(Date.now()-new Date(item.date))/86400000
+
+if(diff>7 && item.status!="Won" && item.status!="Rejected"){
+followHTML+=`<div>${item.name} – follow up</div>`
+}
+
+}
+
+row.innerHTML=`
+
+<td><input value="${item.name||""}" onchange="update(${index},'name',this.value)"></td>
+<td><input value="${item.role||""}" onchange="update(${index},'role',this.value)"></td>
+<td><input value="${item.country||""}" onchange="update(${index},'country',this.value)"></td>
+<td><input value="${item.source||""}" onchange="update(${index},'source',this.value)"></td>
+<td><input type="date" value="${item.date||""}" onchange="update(${index},'date',this.value)"></td>
+
+<td>
+<select onchange="update(${index},'status',this.value)">
+<option ${item.status=="Lead"?"selected":""}>Lead</option>
+<option ${item.status=="Applied"?"selected":""}>Applied</option>
+<option ${item.status=="Interview"?"selected":""}>Interview</option>
+<option ${item.status=="Proposal"?"selected":""}>Proposal</option>
+<option ${item.status=="Won"?"selected":""}>Won</option>
+<option ${item.status=="Rejected"?"selected":""}>Rejected</option>
+</select>
+</td>
+
+<td><input value="${item.link||""}" onchange="update(${index},'link',this.value)"></td>
+<td><input value="${item.notes||""}" onchange="update(${index},'notes',this.value)"></td>
+
+<td><button class="delete-btn" onclick="deleteRow(${index})">X</button></td>
+
+`
+
+tbody.appendChild(row)
+
+})
+
+document.getElementById("followList").innerHTML=followHTML || "No pending follow-ups."
+
+renderKanban()
+renderChart()
+updateStats()
+
+}
+
+function renderKanban(){
+
+let stages=["Lead","Applied","Interview","Proposal","Won"]
+
+let board=document.getElementById("kanban")
+
+board.innerHTML=""
+
+stages.forEach(stage=>{
+
+let col=document.createElement("div")
+col.className="column"
+
+col.innerHTML=`<b>${stage}</b>`
+
+data[currentTab].forEach((item)=>{
+
+if(item.status==stage){
+
+let card=document.createElement("div")
+card.className="card-item"
+card.innerText=item.name || "Untitled"
+
+col.appendChild(card)
+
+}
+
+})
+
+board.appendChild(col)
+
+})
+
+}
+
+function renderChart(){
+
+let counts={}
+
+data[currentTab].forEach(x=>{
+
+if(!counts[x.country]) counts[x.country]=0
+counts[x.country]++
+
+})
+
+new Chart(document.getElementById("countryChart"),{
+type:"bar",
+data:{
+labels:Object.keys(counts),
+datasets:[{data:Object.values(counts)}]
+},
+options:{plugins:{legend:{display:false}}}
+})
+
+}
+
+function addRow(){
+
+data[currentTab].push({
+name:"",
+role:"",
+country:"",
+source:"",
+date:"",
+status:"Lead",
+link:"",
+notes:""
+})
+
+save()
+render()
+
+}
+
+function update(index,field,value){
+
+data[currentTab][index][field]=value
+save()
+
+}
+
+function deleteRow(index){
+
+data[currentTab].splice(index,1)
+
+save()
+render()
+
+}
+
+function exportCSV(){
+
+let rows=data[currentTab]
+
+let csv="Name,Role,Country,Source,Date,Status,Link,Notes\n"
+
+rows.forEach(r=>{
+csv+=`${r.name||""},${r.role||""},${r.country||""},${r.source||""},${r.date||""},${r.status||""},${r.link||""},${r.notes||""}\n`
+})
+
+let blob=new Blob([csv])
+
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download=currentTab+".csv"
+a.click()
+
+}
+
+function exportBackup(){
+
+let backup={
+jobs:data.jobs,
+freelance:data.freelance,
+clients:data.clients
+}
+
+let blob=new Blob([JSON.stringify(backup,null,2)])
+
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+
+let date=new Date().toISOString().split("T")[0]
+
+a.download="opportunity-backup-"+date+".json"
+
+a.click()
+
+}
+
+function importBackup(event){
+
+let file=event.target.files[0]
+
+if(!file) return
+
+if(!confirm("Importing backup will overwrite existing data. Continue?")) return
+
+let reader=new FileReader()
+
+reader.onload=function(e){
+
+let backup=JSON.parse(e.target.result)
+
+data.jobs=backup.jobs || []
+data.freelance=backup.freelance || []
+data.clients=backup.clients || []
+
+save()
+render()
+
+}
+
+reader.readAsText(file)
+
+}
+
+render()
+
+</script>
+
+</body>
+</html>
