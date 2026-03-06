@@ -16,14 +16,10 @@ padding:20px;
 color:#1f2937;
 }
 
-/* FULL WIDTH */
-
 .container{
 max-width:1800px;
 margin:auto;
 }
-
-/* TITLE */
 
 h1{
 text-align:center;
@@ -32,7 +28,7 @@ font-size:32px;
 font-weight:700;
 }
 
-/* FREEZE BANNER */
+/* STICKY BANNER */
 
 .banner{
 position:sticky;
@@ -82,10 +78,6 @@ font-weight:600;
 cursor:pointer;
 }
 
-button:hover{
-opacity:0.9;
-}
-
 /* CANVAS */
 
 .canvas{
@@ -109,21 +101,34 @@ overflow:auto;
 
 .block h3{
 font-size:16px;
-margin-bottom:8px;
+margin-bottom:6px;
 font-weight:700;
 }
 
-/* TEXTAREA */
+/* DESCRIPTION */
 
-textarea{
+.desc{
+height:60px;
+resize:vertical;
+margin-bottom:8px;
+border-radius:8px;
+border:none;
+padding:8px;
+font-size:14px;
+background:rgba(255,255,255,0.6);
+}
+
+/* MAIN NOTES */
+
+.notes{
 flex:1;
 resize:both;
 border:none;
 border-radius:10px;
-padding:12px;
+padding:10px;
 font-size:15px;
 line-height:1.6;
-background:transparent;
+background:rgba(255,255,255,0.8);
 }
 
 /* COLORS */
@@ -181,26 +186,20 @@ grid-template-columns:1fr;
 <div class="banner">
 
 <div class="header">
-
 <input id="project" placeholder="Project Name">
 <input id="company" placeholder="Company">
 <input id="founder" placeholder="Founder">
 <input id="date" placeholder="Date">
 <input id="version" placeholder="Version">
-
 </div>
 
 <div class="toolbar">
-
 <button onclick="saveData()">Save</button>
 <button onclick="clearData()">Clear</button>
 <button onclick="window.print()">Export PDF</button>
-
 <button onclick="exportBackup()">Export Backup</button>
 <button onclick="importBackup()">Import Backup</button>
-
 <input type="file" id="fileInput" style="display:none" accept=".json">
-
 </div>
 
 </div>
@@ -209,47 +208,56 @@ grid-template-columns:1fr;
 
 <div class="block kp">
 <h3>Key Partners</h3>
-<textarea id="kp"></textarea>
+<textarea class="desc" id="kp_desc" placeholder="Short description..."></textarea>
+<textarea class="notes" id="kp" placeholder="Detailed notes..."></textarea>
 </div>
 
 <div class="block ka">
 <h3>Key Activities</h3>
-<textarea id="ka"></textarea>
+<textarea class="desc" id="ka_desc"></textarea>
+<textarea class="notes" id="ka"></textarea>
 </div>
 
 <div class="block kr">
 <h3>Key Resources</h3>
-<textarea id="kr"></textarea>
+<textarea class="desc" id="kr_desc"></textarea>
+<textarea class="notes" id="kr"></textarea>
 </div>
 
 <div class="block vp">
 <h3>Value Proposition</h3>
-<textarea id="vp"></textarea>
+<textarea class="desc" id="vp_desc"></textarea>
+<textarea class="notes" id="vp"></textarea>
 </div>
 
 <div class="block cr">
 <h3>Customer Relationships</h3>
-<textarea id="cr"></textarea>
+<textarea class="desc" id="cr_desc"></textarea>
+<textarea class="notes" id="cr"></textarea>
 </div>
 
 <div class="block ch">
 <h3>Channels</h3>
-<textarea id="ch"></textarea>
+<textarea class="desc" id="ch_desc"></textarea>
+<textarea class="notes" id="ch"></textarea>
 </div>
 
 <div class="block cs">
 <h3>Customer Segments</h3>
-<textarea id="cs"></textarea>
+<textarea class="desc" id="cs_desc"></textarea>
+<textarea class="notes" id="cs"></textarea>
 </div>
 
 <div class="block cost">
 <h3>Cost Structure</h3>
-<textarea id="cost"></textarea>
+<textarea class="desc" id="cost_desc"></textarea>
+<textarea class="notes" id="cost"></textarea>
 </div>
 
 <div class="block rev">
 <h3>Revenue Streams</h3>
-<textarea id="rev"></textarea>
+<textarea class="desc" id="rev_desc"></textarea>
+<textarea class="notes" id="rev"></textarea>
 </div>
 
 </div>
@@ -260,7 +268,17 @@ grid-template-columns:1fr;
 
 const fields=[
 "project","company","founder","date","version",
-"kp","ka","kr","vp","cr","ch","cs","cost","rev"
+
+"kp_desc","kp",
+"ka_desc","ka",
+"kr_desc","kr",
+"vp_desc","vp",
+"cr_desc","cr",
+"ch_desc","ch",
+"cs_desc","cs",
+"cost_desc","cost",
+"rev_desc","rev"
+
 ]
 
 function saveData(){
@@ -290,8 +308,6 @@ location.reload()
 
 }
 
-/* EXPORT BACKUP */
-
 function exportBackup(){
 
 let data={}
@@ -309,18 +325,13 @@ link.click()
 
 }
 
-/* IMPORT BACKUP */
-
 function importBackup(){
-
 document.getElementById("fileInput").click()
-
 }
 
 document.getElementById("fileInput").addEventListener("change",function(){
 
 let file=this.files[0]
-
 if(!file) return
 
 let reader=new FileReader()
