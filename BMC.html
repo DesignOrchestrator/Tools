@@ -28,7 +28,7 @@ font-size:32px;
 font-weight:700;
 }
 
-/* STICKY BANNER */
+/* STICKY HEADER */
 
 .banner{
 position:sticky;
@@ -52,10 +52,10 @@ margin-bottom:12px;
 }
 
 .header input{
-padding:12px;
+padding:10px;
 border:1px solid #d1d5db;
 border-radius:8px;
-font-size:15px;
+font-size:14px;
 }
 
 /* TOOLBAR */
@@ -63,13 +63,13 @@ font-size:15px;
 .toolbar{
 display:flex;
 justify-content:center;
-gap:12px;
-margin-bottom:15px;
+gap:10px;
 flex-wrap:wrap;
+margin-bottom:15px;
 }
 
 button{
-padding:10px 20px;
+padding:8px 18px;
 border:none;
 border-radius:8px;
 background:#4f6df5;
@@ -78,11 +78,16 @@ font-weight:600;
 cursor:pointer;
 }
 
-/* CANVAS */
+button:hover{
+opacity:0.9;
+}
+
+/* CANVAS GRID */
 
 .canvas{
 display:grid;
 grid-template-columns:repeat(5,1fr);
+grid-template-rows:260px 260px 260px;
 gap:16px;
 }
 
@@ -90,73 +95,84 @@ gap:16px;
 
 .block{
 border-radius:14px;
-padding:14px;
+padding:12px;
 display:flex;
 flex-direction:column;
 box-shadow:0 4px 14px rgba(0,0,0,0.08);
-min-height:260px;
-resize:both;
-overflow:auto;
+overflow:hidden;
 }
 
 .block h3{
-font-size:16px;
-margin-bottom:6px;
+margin:0 0 6px 0;
+font-size:15px;
 font-weight:700;
 }
 
 /* DESCRIPTION */
 
 .desc{
-height:60px;
+height:55px;
 resize:vertical;
-margin-bottom:8px;
-border-radius:8px;
 border:none;
+border-radius:8px;
 padding:8px;
-font-size:14px;
+margin-bottom:6px;
+font-size:13px;
 background:rgba(255,255,255,0.6);
 }
 
-/* MAIN NOTES */
+/* NOTES */
 
 .notes{
 flex:1;
-resize:both;
+resize:vertical;
 border:none;
-border-radius:10px;
-padding:10px;
-font-size:15px;
-line-height:1.6;
-background:rgba(255,255,255,0.8);
+border-radius:8px;
+padding:8px;
+font-size:14px;
+line-height:1.5;
+background:rgba(255,255,255,0.85);
 }
 
-/* COLORS */
+/* GRID POSITIONS */
 
-.kp{grid-column:1;background:#dbeafe;}
-.ka{grid-column:1;background:#cffafe;}
-.kr{grid-column:1;background:#dcfce7;}
+.kp{grid-column:1;grid-row:1;background:#dbeafe;}
+.ka{grid-column:1;grid-row:2;background:#cffafe;}
+.kr{grid-column:1;grid-row:3;background:#dcfce7;}
 
 .vp{
 grid-column:2 / span 2;
+grid-row:1 / span 2;
 background:#fef3c7;
 }
 
-.cr{grid-column:4;background:#fbcfe8;}
-.ch{grid-column:5;background:#e9d5ff;}
+.cr{
+grid-column:4;
+grid-row:1;
+background:#fbcfe8;
+}
+
+.ch{
+grid-column:5;
+grid-row:1;
+background:#e9d5ff;
+}
 
 .cs{
 grid-column:4 / span 2;
+grid-row:2;
 background:#bfdbfe;
 }
 
 .cost{
 grid-column:2 / span 2;
+grid-row:3;
 background:#fed7aa;
 }
 
 .rev{
 grid-column:4 / span 2;
+grid-row:3;
 background:#bbf7d0;
 }
 
@@ -164,12 +180,13 @@ background:#bbf7d0;
 
 @media(max-width:900px){
 
-.header{
-grid-template-columns:1fr 1fr;
-}
-
 .canvas{
 grid-template-columns:1fr;
+grid-template-rows:auto;
+}
+
+.block{
+min-height:250px;
 }
 
 }
@@ -194,12 +211,16 @@ grid-template-columns:1fr;
 </div>
 
 <div class="toolbar">
+
 <button onclick="saveData()">Save</button>
 <button onclick="clearData()">Clear</button>
 <button onclick="window.print()">Export PDF</button>
+
 <button onclick="exportBackup()">Export Backup</button>
 <button onclick="importBackup()">Import Backup</button>
+
 <input type="file" id="fileInput" style="display:none" accept=".json">
+
 </div>
 
 </div>
@@ -208,8 +229,8 @@ grid-template-columns:1fr;
 
 <div class="block kp">
 <h3>Key Partners</h3>
-<textarea class="desc" id="kp_desc" placeholder="Short description..."></textarea>
-<textarea class="notes" id="kp" placeholder="Detailed notes..."></textarea>
+<textarea class="desc" id="kp_desc" placeholder="Short description"></textarea>
+<textarea class="notes" id="kp"></textarea>
 </div>
 
 <div class="block ka">
@@ -267,6 +288,7 @@ grid-template-columns:1fr;
 <script>
 
 const fields=[
+
 "project","company","founder","date","version",
 
 "kp_desc","kp",
@@ -287,7 +309,7 @@ fields.forEach(id=>{
 localStorage.setItem(id,document.getElementById(id).value)
 })
 
-alert("Saved Successfully")
+alert("Saved")
 
 }
 
@@ -320,13 +342,15 @@ let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
 
 let link=document.createElement("a")
 link.href=URL.createObjectURL(blob)
-link.download="business_model_canvas_backup.json"
+link.download="bmc_backup.json"
 link.click()
 
 }
 
 function importBackup(){
+
 document.getElementById("fileInput").click()
+
 }
 
 document.getElementById("fileInput").addEventListener("change",function(){
@@ -347,7 +371,7 @@ localStorage.setItem(id,data[id])
 }
 })
 
-alert("Backup Restored Successfully")
+alert("Backup restored")
 
 }
 
