@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Business Cost Tracker</title>
+
+<style>
+
+body{
+font-family:Arial, Helvetica, sans-serif;
+background:#f5f7fa;
+margin:20px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+h2{
+margin-top:0;
+}
+
+.summary{
+display:flex;
+gap:10px;
+margin-bottom:15px;
+}
+
+.card{
+flex:1;
+background:#f1f3f6;
+padding:10px;
+border-radius:8px;
+text-align:center;
+font-weight:bold;
+font-size:14px;
+}
+
+.card span{
+display:block;
+font-size:18px;
+margin-top:5px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+font-size:13px;
+}
+
+th{
+background:#eef1f5;
+padding:8px;
+}
+
+td{
+padding:6px;
+text-align:center;
+}
+
+input,select{
+width:100%;
+border:none;
+background:transparent;
+text-align:center;
+font-size:13px;
+}
+
+button{
+background:#2f80ed;
+color:white;
+border:none;
+padding:7px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:12px;
+margin-right:5px;
+}
+
+.delete{
+background:#e74c3c;
+}
+
+.toolbar{
+margin-bottom:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Business Cost Tracker</h2>
+
+<div class="summary">
+
+<div class="card">
+Total Cost
+<span id="total">0</span>
+</div>
+
+<div class="card">
+One-Time
+<span id="onetime">0</span>
+</div>
+
+<div class="card">
+Recurring
+<span id="recurring">0</span>
+</div>
+
+</div>
+
+<div class="toolbar">
+
+<button onclick="addRow()">Add Cost</button>
+
+<button onclick="exportBackup()">Export Backup</button>
+
+<button onclick="importBackup()">Import Backup</button>
+
+<input type="file" id="fileInput" style="display:none">
+
+</div>
+
+<table id="costTable">
+
+<tr>
+<th>Date</th>
+<th>Category</th>
+<th>Item</th>
+<th>Vendor</th>
+<th>Amount</th>
+<th>Currency</th>
+<th>Type</th>
+<th>Notes</th>
+<th>Del</th>
+</tr>
+
+</table>
+
+</div>
+
+<script>
+
+function addRow(){
+
+let table=document.getElementById("costTable")
+
+let row=table.insertRow()
+
+row.innerHTML=`
+
+<td><input type="date"></td>
+
+<td><input placeholder="Domain / Tool"></td>
+
+<td><input placeholder="Item"></td>
+
+<td><input placeholder="Vendor"></td>
+
+<td><input type="number" class="amount" oninput="calculate()"></td>
+
+<td>
+<select>
+<option>USD</option>
+<option>SGD</option>
+</select>
+</td>
+
+<td>
+<select class="type" onchange="calculate()">
+<option>One-time</option>
+<option>Monthly</option>
+<option>Yearly</option>
+</select>
+</td>
+
+<td><input></td>
+
+<td><button class="delete" onclick="deleteRow(this)">X</button></td>
+
+`
+
+saveData()
+
+}
+
+function deleteRow(btn){
+
+btn.parentElement.parentElement.remove()
+
+calculate()
+
+saveData()
+
+}
+
+function calculate(){
+
+let amounts=document.querySelectorAll(".amount")
+let types=document.querySelectorAll(".type")
+
+let total=0
+let one=0
+let recurring=0
+
+for(let i=0;i<amounts.length;i++){
+
+let val=parseFloat(amounts[i].value)||0
+
+total+=val
+
+if(types[i].value=="One-time") one+=val
+else recurring+=val
+
+}
+
+document.getElementById("total").innerText=total
+document.getElementById("onetime").innerText=one
+document.getElementById("recurring").innerText=recurring
+
+saveData()
+
+}
+
+function saveData(){
+
+localStorage.setItem("businessCostTracker",document.getElementById("costTable").innerHTML)
+
+}
+
+function loadData(){
+
+let data=localStorage.getItem("businessCostTracker")
+
+if(data){
+
+document.getElementById("costTable").innerHTML=data
+
+calculate()
+
+}
+
+}
+
+function exportBackup(){
+
+let data=localStorage.getItem("businessCostTracker")
+
+let blob=new Blob([data],{type:"application/json"})
+
+let link=document.createElement("a")
+
+link.href=URL.createObjectURL(blob)
+
+link.download="business-cost-backup.json"
+
+link.click()
+
+}
+
+function importBackup(){
+
+document.getElementById("fileInput").click()
+
+}
+
+document.getElementById("fileInput").addEventListener("change",function(){
+
+let file=this.files[0]
+
+let reader=new FileReader()
+
+reader.onload=function(e){
+
+localStorage.setItem("businessCostTracker",e.target.result)
+
+loadData()
+
+}
+
+reader.readAsText(file)
+
+})
+
+loadData()
+
+</script>
+
+</body>
+</html>
