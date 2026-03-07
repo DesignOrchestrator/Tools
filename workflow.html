@@ -1,35 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <title>Workflow Template</title>
-
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
 <style>
-
 body{
 font-family:system-ui,-apple-system,Segoe UI,Roboto;
 background:#eef2f6;
 margin:0;
 }
-
 /* HEADER */
-
 .topbar{
 position:sticky;
 top:0;
 background:white;
 padding:10px 18px;
 box-shadow:0 2px 6px rgba(0,0,0,0.05);
+z-index: 100;
 }
-
 h1{
 margin:0;
 font-size:18px;
 }
-
 .toolbar{
 display:flex;
 gap:8px;
@@ -37,7 +30,6 @@ margin-top:8px;
 flex-wrap:wrap;
 align-items:center;
 }
-
 button{
 padding:5px 10px;
 border:none;
@@ -45,28 +37,22 @@ border-radius:6px;
 cursor:pointer;
 font-size:12px;
 }
-
 .primary{background:#2c7be5;color:white;}
 .success{background:#28a745;color:white;}
 .secondary{background:#6c757d;color:white;}
 .danger{background:#e55353;color:white;}
 .import{background:#8e44ad;color:white;}
-
 select{
 padding:5px;
 border-radius:6px;
 }
-
 /* CONTAINER */
-
 .container{
 max-width:1100px;
 margin:auto;
 padding:20px;
 }
-
 /* STAGE */
-
 .stage-box{
 background:white;
 border-radius:8px;
@@ -74,7 +60,6 @@ margin-top:14px;
 box-shadow:0 2px 6px rgba(0,0,0,0.05);
 overflow:hidden;
 }
-
 .stage-header{
 background:linear-gradient(90deg,#2c7be5,#4e8df5);
 color:white;
@@ -85,7 +70,6 @@ display:flex;
 justify-content:space-between;
 align-items:center;
 }
-
 .stage-header input{
 background:transparent;
 border:none;
@@ -93,47 +77,38 @@ color:white;
 font-weight:600;
 width:200px;
 }
-
 .stage-header button{
 background:white;
 color:#2c7be5;
 font-weight:bold;
 }
-
 /* TABLE */
-
 table{
 width:100%;
 border-collapse:collapse;
 }
-
 thead{
 background:#f6f8fb;
 }
-
 th,td{
 padding:8px;
 border-bottom:1px solid #eee;
 font-size:13px;
 }
-
 input{
 width:100%;
 border:none;
 background:transparent;
 font-size:13px;
 }
-
 input:focus{
 background:#fff8dc;
 outline:none;
 }
-
 .col-step{width:70px}
 .col-ref{width:220px}
 .col-delete{width:50px}
 .col-workflow{width:160px}
-
 .delete-btn{
 background:#e55353;
 color:white;
@@ -143,402 +118,271 @@ border-radius:4px;
 cursor:pointer;
 font-size:11px;
 }
-
 </style>
 </head>
-
 <body>
 
 <div class="topbar">
-
-<h1>Workflow Template</h1>
-
-<div class="toolbar">
-
-<select id="workflowSelect" onchange="changeWorkflow()"></select>
-
-<button class="success" onclick="addWorkflow()">Add Workflow</button>
-<button class="primary" onclick="addStage()">Add Stage</button>
-
-<button class="import" onclick="importWorkflow()">Import Workflow</button>
-
-<button class="secondary" onclick="exportBackup()">Export Backup</button>
-<button class="secondary" onclick="importBackup()">Import Backup</button>
-
-<button class="danger" onclick="clearData()">Clear Data</button>
-
-<input type="file" id="fileInput" style="display:none">
-
-</div>
-
+    <h1>Workflow Template</h1>
+    <div class="toolbar">
+        <select id="workflowSelect" onchange="changeWorkflow()"></select>
+        <button class="success" onclick="addWorkflow()">Add Workflow</button>
+        <button class="primary" onclick="addStage()">Add Stage</button>
+        <button class="import" onclick="importWorkflow()">Import Workflow</button>
+        <button class="secondary" onclick="exportBackup()">Export Backup</button>
+        <button class="secondary" onclick="importBackup()">Import Backup</button>
+        <button class="danger" onclick="clearData()">Clear Data</button>
+        <input type="file" id="fileInput" style="display:none">
+    </div>
 </div>
 
 <div class="container">
-
-<div id="workflow"></div>
-
+    <div id="workflow"></div>
 </div>
 
 <script>
-
 const STORAGE_KEY="workflow_template_data"
-
 let data=[]
 let currentWorkflow="Unassigned"
 
 function load(){
-
-let saved=localStorage.getItem(STORAGE_KEY)
-
-if(saved){
-data=JSON.parse(saved)
-}
-
-renderWorkflowSelector()
-render()
-
+    let saved=localStorage.getItem(STORAGE_KEY)
+    if(saved){
+        data=JSON.parse(saved)
+    }
+    renderWorkflowSelector()
+    render()
 }
 
 function save(){
-localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 }
 
 /* WORKFLOW LIST */
-
 function getWorkflows(){
-
-let set=new Set(data.map(r=>r.workflow||"Unassigned"))
-set.add("Unassigned")
-
-return [...set]
-
+    let set=new Set(data.map(r=>r.workflow||"Unassigned"))
+    set.add("Unassigned")
+    return [...set]
 }
 
 function renderWorkflowSelector(){
-
-let select=document.getElementById("workflowSelect")
-select.innerHTML=""
-
-getWorkflows().forEach(w=>{
-
-let opt=document.createElement("option")
-opt.value=w
-opt.textContent=w
-
-if(w===currentWorkflow) opt.selected=true
-
-select.appendChild(opt)
-
-})
-
+    let select=document.getElementById("workflowSelect")
+    select.innerHTML=""
+    getWorkflows().forEach(w=>{
+        let opt=document.createElement("option")
+        opt.value=w
+        opt.textContent=w
+        if(w===currentWorkflow) opt.selected=true
+        select.appendChild(opt)
+    })
 }
 
 function changeWorkflow(){
-
-currentWorkflow=document.getElementById("workflowSelect").value
-render()
-
+    currentWorkflow=document.getElementById("workflowSelect").value
+    render()
 }
 
 /* ADD WORKFLOW */
-
 function addWorkflow(){
-
-let name=prompt("Workflow name")
-
-if(!name) return
-
-currentWorkflow=name
-renderWorkflowSelector()
-render()
-
+    let name=prompt("Workflow name")
+    if(!name) return
+    currentWorkflow=name
+    renderWorkflowSelector()
+    render()
 }
 
 /* ADD STAGE */
-
 function addStage(){
+    let stage=prompt("Stage name")
+    if(!stage) return
+    data.push({
+        workflow:currentWorkflow,
+        stage:stage,
+        action:"",
+        ref:""
+    })
+    save()
+    render()
+}
 
-let stage=prompt("Stage name")
+/* ADD ROW (FIXED) */
+function addRow(stageName){
+    data.push({
+        workflow: currentWorkflow,
+        stage: stageName,
+        action: "",
+        ref: ""
+    });
+    save();
+    render();
+}
 
-if(!stage) return
-
-data.push({
-workflow:currentWorkflow,
-stage:stage,
-action:"",
-ref:""
-})
-
-save()
-render()
-
+/* RENAME STAGE (FIXED) */
+function renameStage(oldName, newName) {
+    data.forEach(row => {
+        if (row.stage === oldName && (row.workflow || "Unassigned") === currentWorkflow) {
+            row.stage = newName;
+        }
+    });
+    save();
+    render();
 }
 
 /* GROUP STAGES */
-
 function groupStages(rows){
-
-let groups={}
-
-rows.forEach(row=>{
-
-let stage=row.stage || "Unassigned Stage"
-
-if(!groups[stage]) groups[stage]=[]
-
-groups[stage].push(row)
-
-})
-
-return groups
-
+    let groups={}
+    rows.forEach(row=>{
+        let stage=row.stage || "Unassigned Stage"
+        if(!groups[stage]) groups[stage]=[]
+        groups[stage].push(row)
+    })
+    return groups
 }
 
 /* RENDER */
-
 function render(){
+    renderWorkflowSelector()
+    let container=document.getElementById("workflow")
+    container.innerHTML=""
+    let rows=data.filter(r=>(r.workflow||"Unassigned")===currentWorkflow)
+    let groups=groupStages(rows)
 
-renderWorkflowSelector()
+    Object.keys(groups).forEach((stage,stageIndex)=>{
+        let stageRows=groups[stage]
+        let stageBox=document.createElement("div")
+        stageBox.className="stage-box"
 
-let container=document.getElementById("workflow")
-container.innerHTML=""
+        let header=document.createElement("div")
+        header.className="stage-header"
+        header.innerHTML=`
+            <input value="${stage}" onchange="renameStage('${stage}', this.value)">
+            <button onclick="addRow('${stage}')">+</button>
+        `
 
-let rows=data.filter(r=>(r.workflow||"Unassigned")===currentWorkflow)
+        let body=document.createElement("div")
+        let table=document.createElement("table")
+        table.innerHTML=`
+            <thead>
+                <tr>
+                    <th class="col-step">Step</th>
+                    <th>Action</th>
+                    <th class="col-ref">Reference</th>
+                    <th class="col-workflow">Workflow</th>
+                    <th class="col-delete"></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `
 
-let groups=groupStages(rows)
+        let tbody=table.querySelector("tbody")
+        stageRows.forEach((row,rowIndex)=>{
+            let index=data.indexOf(row)
+            let step=`${stageIndex+1}.${rowIndex+1}`
+            let tr=document.createElement("tr")
+            tr.innerHTML=`
+                <td>${step}</td>
+                <td><input value="${row.action||""}" onchange="update(${index},'action',this.value)"></td>
+                <td><input value="${row.ref||""}" onchange="update(${index},'ref',this.value)"></td>
+                <td>
+                    <select onchange="update(${index},'workflow',this.value)">
+                        ${getWorkflows().map(w=>`<option ${w===(row.workflow||"Unassigned")?'selected':''}>${w}</option>`).join("")}
+                    </select>
+                </td>
+                <td><button class="delete-btn" onclick="deleteRow(${index})">✕</button></td>
+            `
+            tbody.appendChild(tr)
+        })
 
-Object.keys(groups).forEach((stage,stageIndex)=>{
-
-let stageRows=groups[stage]
-
-let stageBox=document.createElement("div")
-stageBox.className="stage-box"
-
-let header=document.createElement("div")
-header.className="stage-header"
-
-header.innerHTML=`
-<input value="${stage}" onchange="renameStage('${stage}',this.value)">
-<button onclick="addRow('${stage}')">+</button>
-`
-
-let body=document.createElement("div")
-
-let table=document.createElement("table")
-
-table.innerHTML=`
-
-<thead>
-<tr>
-<th class="col-step">Step</th>
-<th>Action</th>
-<th class="col-ref">Reference</th>
-<th class="col-workflow">Workflow</th>
-<th class="col-delete"></th>
-</tr>
-</thead>
-
-<tbody></tbody>
-
-`
-
-let tbody=table.querySelector("tbody")
-
-stageRows.forEach((row,rowIndex)=>{
-
-let index=data.indexOf(row)
-
-let step=`${stageIndex+1}.${rowIndex+1}`
-
-let tr=document.createElement("tr")
-
-tr.innerHTML=`
-
-<td>${step}</td>
-
-<td>
-<input value="${row.action||""}" onchange="update(${index},'action',this.value)">
-</td>
-
-<td>
-<input value="${row.ref||""}" onchange="update(${index},'ref',this.value)">
-</td>
-
-<td>
-<select onchange="update(${index},'workflow',this.value)">
-${getWorkflows().map(w=>`
-<option ${w=== (row.workflow||"Unassigned")?'selected':''}>${w}</option>
-`).join("")}
-</select>
-</td>
-
-<td>
-<button class="delete-btn" onclick="deleteRow(${index})">✕</button>
-</td>
-
-`
-
-tbody.appendChild(tr)
-
-})
-
-body.appendChild(table)
-
-stageBox.appendChild(header)
-stageBox.appendChild(body)
-
-container.appendChild(stageBox)
-
-})
-
+        body.appendChild(table)
+        stageBox.appendChild(header)
+        stageBox.appendChild(body)
+        container.appendChild(stageBox)
+    })
 }
 
 /* IMPORT WORKFLOW */
-
 function importWorkflow(){
-
-let file=document.getElementById("fileInput")
-
-file.accept=".json,.csv,.xlsx"
-
-file.onchange=e=>{
-
-let reader=new FileReader()
-
-let f=e.target.files[0]
-
-if(f.name.endsWith(".json")){
-
-reader.onload=function(){
-
-let rows=JSON.parse(reader.result)
-
-data=data.concat(rows)
-
-save()
-render()
-
+    let file=document.getElementById("fileInput")
+    file.accept=".json,.csv,.xlsx"
+    file.onchange=e=>{
+        let reader=new FileReader()
+        let f=e.target.files[0]
+        if(!f) return;
+        if(f.name.endsWith(".json")){
+            reader.onload=function(){
+                let rows=JSON.parse(reader.result)
+                data=data.concat(rows)
+                save()
+                render()
+            }
+            reader.readAsText(f)
+        } else {
+            reader.onload=function(evt){
+                let workbook=XLSX.read(evt.target.result,{type:'binary'})
+                let sheet=workbook.Sheets[workbook.SheetNames[0]]
+                let json=XLSX.utils.sheet_to_json(sheet)
+                json.forEach(r=>{
+                    data.push({
+                        workflow:r.Workflow || "Imported Workflow",
+                        stage:r.Stage || "Imported Stage",
+                        action:r.Action || "",
+                        ref:r.Reference || ""
+                    })
+                })
+                save()
+                render()
+            }
+            reader.readAsBinaryString(f)
+        }
+    }
+    file.click()
 }
-
-reader.readAsText(f)
-
-}
-
-else{
-
-reader.onload=function(evt){
-
-let workbook=XLSX.read(evt.target.result,{type:'binary'})
-let sheet=workbook.Sheets[workbook.SheetNames[0]]
-
-let json=XLSX.utils.sheet_to_json(sheet)
-
-json.forEach(r=>{
-
-data.push({
-workflow:r.Workflow || "Imported Workflow",
-stage:r.Stage || "Imported Stage",
-action:r.Action || "",
-ref:r.Reference || ""
-})
-
-})
-
-save()
-render()
-
-}
-
-reader.readAsBinaryString(f)
-
-}
-
-}
-
-file.click()
-
-}
-
-/* UPDATE */
 
 function update(i,key,val){
-
-data[i][key]=val
-
-save()
-render()
-
+    data[i][key]=val
+    save()
+    render()
 }
-
-/* DELETE */
 
 function deleteRow(i){
-
-data.splice(i,1)
-
-save()
-render()
-
+    data.splice(i,1)
+    save()
+    render()
 }
-
-/* EXPORT */
 
 function exportBackup(){
-
-let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
-
-let a=document.createElement("a")
-
-a.href=URL.createObjectURL(blob)
-
-a.download="workflow-template-backup.json"
-
-a.click()
-
+    let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
+    let a=document.createElement("a")
+    a.href=URL.createObjectURL(blob)
+    a.download="workflow-template-backup.json"
+    a.click()
 }
-
-/* IMPORT BACKUP */
 
 function importBackup(){
-
-let file=document.getElementById("fileInput")
-
-file.onchange=e=>{
-
-let reader=new FileReader()
-
-reader.onload=function(){
-
-data=JSON.parse(reader.result)
-
-save()
-render()
-
-}
-
-reader.readAsText(e.target.files[0])
-
-}
-
-file.click()
-
+    let file=document.getElementById("fileInput")
+    file.onchange=e=>{
+        let reader=new FileReader()
+        let f=e.target.files[0]
+        if(!f) return;
+        reader.onload=function(){
+            data=JSON.parse(reader.result)
+            save()
+            render()
+        }
+        reader.readAsText(f)
+    }
+    file.click()
 }
 
 function clearData(){
-
-if(confirm("Clear all workflow steps?")){
-
-data=[]
-save()
-render()
-
-}
-
+    if(confirm("Clear all workflow steps?")){
+        data=[]
+        save()
+        render()
+    }
 }
 
 load()
-
 </script>
-
 </body>
 </html>
