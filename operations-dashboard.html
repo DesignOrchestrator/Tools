@@ -63,7 +63,7 @@ th{
 background:#eef1f6;
 }
 
-input,select{
+select,input{
 width:100%;
 border:none;
 outline:none;
@@ -87,10 +87,6 @@ border-radius:3px;
 cursor:pointer;
 }
 
-.master-controls{
-margin-bottom:10px;
-}
-
 .footer{
 margin-top:10px;
 font-size:12px;
@@ -98,7 +94,6 @@ color:#777;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -111,6 +106,7 @@ color:#777;
 <button onclick="switchTab('projects')">Project Tracker</button>
 <button onclick="switchTab('freelancers')">Freelancer Tracker</button>
 <button onclick="switchTab('revenue')">Revenue Tracker</button>
+<button onclick="switchTab('data')">Data</button>
 </div>
 
 <div class="toolbar">
@@ -119,15 +115,6 @@ color:#777;
 <button onclick="importBackup()">Import Backup</button>
 <button class="danger" onclick="clearAll()">Clear All</button>
 <input type="file" id="fileInput" style="display:none">
-</div>
-
-<div class="master-controls">
-
-<button onclick="addMaster('companies')">Add Company</button>
-<button onclick="addMaster('clients')">Add Client</button>
-<button onclick="addMaster('projects')">Add Project</button>
-<button onclick="addMaster('countries')">Add Country</button>
-
 </div>
 
 <!-- PIPELINE -->
@@ -141,20 +128,18 @@ color:#777;
 <th>Contact</th>
 <th>Country</th>
 <th>Stage</th>
-<th>Potential Value</th>
-<th>Next Follow Up</th>
+<th>Value</th>
+<th>Follow Up</th>
 <th>Notes</th>
 <th></th>
 </tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 </div>
 
-<!-- CLIENT -->
+<!-- CLIENTS -->
 
 <div id="clients" class="section">
 
@@ -164,20 +149,17 @@ color:#777;
 <th>Client</th>
 <th>Country</th>
 <th>Contact</th>
-<th>First Project</th>
 <th>Status</th>
 <th>Notes</th>
 <th></th>
 </tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 </div>
 
-<!-- PROJECT -->
+<!-- PROJECTS -->
 
 <div id="projects" class="section">
 
@@ -194,14 +176,12 @@ color:#777;
 <th></th>
 </tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 </div>
 
-<!-- FREELANCER -->
+<!-- FREELANCERS -->
 
 <div id="freelancers" class="section">
 
@@ -218,9 +198,7 @@ color:#777;
 <th></th>
 </tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 </div>
@@ -234,25 +212,52 @@ color:#777;
 <tr>
 <th>Project</th>
 <th>Client</th>
-<th>Total Fee</th>
+<th>Total</th>
 <th>Paid</th>
 <th>Balance</th>
-<th>Payment Date</th>
+<th>Date</th>
 <th>Status</th>
 <th></th>
 </tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 </div>
 
-<datalist id="companies"></datalist>
-<datalist id="clients"></datalist>
-<datalist id="projects"></datalist>
-<datalist id="countries"></datalist>
+<!-- DATA MASTER LIST -->
+
+<div id="data" class="section">
+
+<h3>Companies</h3>
+<button onclick="addData('companies')">Add</button>
+<table>
+<thead><tr><th>Name</th><th></th></tr></thead>
+<tbody id="companies"></tbody>
+</table>
+
+<h3>Clients</h3>
+<button onclick="addData('clientsList')">Add</button>
+<table>
+<thead><tr><th>Name</th><th></th></tr></thead>
+<tbody id="clientsList"></tbody>
+</table>
+
+<h3>Projects</h3>
+<button onclick="addData('projectsList')">Add</button>
+<table>
+<thead><tr><th>Name</th><th></th></tr></thead>
+<tbody id="projectsList"></tbody>
+</table>
+
+<h3>Countries</h3>
+<button onclick="addData('countries')">Add</button>
+<table>
+<thead><tr><th>Name</th><th></th></tr></thead>
+<tbody id="countries"></tbody>
+</table>
+
+</div>
 
 <div class="footer">
 Data stored locally. Export backup regularly.
@@ -260,249 +265,341 @@ Data stored locally. Export backup regularly.
 
 <script>
 
-const STORAGE="ops_dashboard";
+const STORAGE="ops_dashboard_v2"
 
-let currentTab="pipeline";
+let currentTab="pipeline"
 
-const stageOptions=[
-"Lead Identified","Contacted","Responded","Discovery",
-"Proposal Sent","Negotiation","Won","Lost"
-];
+let masterData={
+companies:[],
+clientsList:[],
+projectsList:[],
+countries:[]
+}
 
-const projectStages=[
-"Planning","Kickoff","Production","Coordination","Review","Delivery","Completed"
-];
+const stages=["Lead Identified","Contacted","Responded","Discovery","Proposal Sent","Negotiation","Won","Lost"]
 
-const availabilityOptions=[
-"Available","Busy","Unavailable"
-];
+const projectStages=["Planning","Kickoff","Production","Coordination","Review","Delivery","Completed"]
 
-const ratingOptions=["1","2","3","4","5"];
+const statusList=["Active","Inactive","Completed","Potential"]
 
-const paymentStatus=["Pending","Partial","Paid","Overdue"];
+const availability=["Available","Busy","Unavailable"]
+
+const rating=["1","2","3","4","5"]
+
+const paymentStatus=["Pending","Partial","Paid","Overdue"]
 
 function switchTab(tab){
 
-currentTab=tab;
+currentTab=tab
 
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-document.getElementById(tab).classList.add("active");
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
 
-document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
-event.target.classList.add("active");
+document.getElementById(tab).classList.add("active")
 
-}
+document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"))
 
-function createInput(type,list){
-
-let input=document.createElement("input");
-
-input.type=type;
-
-if(list) input.setAttribute("list",list);
-
-input.oninput=saveData;
-
-return input;
+event.target.classList.add("active")
 
 }
 
-function createSelect(options){
+function createDropdown(options,value){
 
-let select=document.createElement("select");
+let select=document.createElement("select")
 
-options.forEach(v=>{
-let o=document.createElement("option");
-o.value=v;
-o.text=v;
-select.appendChild(o);
-});
+options.forEach(o=>{
+let opt=document.createElement("option")
+opt.value=o
+opt.text=o
+select.appendChild(opt)
+})
 
-select.onchange=saveData;
+select.value=value||options[0]
 
-return select;
+select.onchange=saveData
+
+return select
+
+}
+
+function createText(value){
+
+let input=document.createElement("input")
+
+input.value=value||""
+
+input.oninput=saveData
+
+return input
+
+}
+
+function createDate(value){
+
+let input=document.createElement("input")
+
+input.type="date"
+
+input.value=value||""
+
+input.onchange=saveData
+
+return input
 
 }
 
 function addRow(data=[]){
 
-let table=document.querySelector("#"+currentTab+" tbody");
+let table=document.querySelector("#"+currentTab+" tbody")
 
-let row=document.createElement("tr");
+let row=document.createElement("tr")
 
-let headers=document.querySelectorAll("#"+currentTab+" thead th");
+let headers=document.querySelectorAll("#"+currentTab+" thead th")
 
 for(let i=0;i<headers.length-1;i++){
 
-let td=document.createElement("td");
+let name=headers[i].innerText
 
-let name=headers[i].innerText;
+let field
 
-let field;
+if(name==="Company") field=createDropdown(masterData.companies,data[i])
 
-if(name==="Company") field=createInput("text","companies");
-else if(name==="Client") field=createInput("text","clients");
-else if(name==="Project") field=createInput("text","projects");
-else if(name==="Country") field=createInput("text","countries");
-else if(name.includes("Date") || name==="Deadline" || name.includes("Follow")) field=createInput("date");
-else if(name==="Stage" && currentTab==="pipeline") field=createSelect(stageOptions);
-else if(name==="Stage" && currentTab==="projects") field=createSelect(projectStages);
-else if(name==="Availability") field=createSelect(availabilityOptions);
-else if(name==="Rating") field=createSelect(ratingOptions);
-else if(name==="Status" && currentTab==="revenue") field=createSelect(paymentStatus);
-else field=createInput("text");
+else if(name==="Client") field=createDropdown(masterData.clientsList,data[i])
 
-if(data[i]) field.value=data[i];
+else if(name==="Project") field=createDropdown(masterData.projectsList,data[i])
 
-td.appendChild(field);
+else if(name==="Country") field=createDropdown(masterData.countries,data[i])
 
-row.appendChild(td);
+else if(name==="Stage" && currentTab==="pipeline") field=createDropdown(stages,data[i])
+
+else if(name==="Stage" && currentTab==="projects") field=createDropdown(projectStages,data[i])
+
+else if(name==="Status" && currentTab==="clients") field=createDropdown(statusList,data[i])
+
+else if(name==="Status" && currentTab==="revenue") field=createDropdown(paymentStatus,data[i])
+
+else if(name==="Availability") field=createDropdown(availability,data[i])
+
+else if(name==="Rating") field=createDropdown(rating,data[i])
+
+else if(name==="Deadline" || name==="Date" || name==="Follow Up") field=createDate(data[i])
+
+else field=createText(data[i])
+
+let td=document.createElement("td")
+
+td.appendChild(field)
+
+row.appendChild(td)
 
 }
 
-let del=document.createElement("button");
+let del=document.createElement("button")
 
-del.innerText="X";
+del.innerText="X"
 
-del.className="delete-btn";
+del.className="delete-btn"
 
 del.onclick=function(){
 
-row.remove();
+row.remove()
 
-saveData();
+saveData()
 
-};
+}
 
-let td=document.createElement("td");
+let td=document.createElement("td")
 
-td.appendChild(del);
+td.appendChild(del)
 
-row.appendChild(td);
+row.appendChild(td)
 
-table.appendChild(row);
+table.appendChild(row)
 
-saveData();
+saveData()
+
+}
+
+function addData(type){
+
+let val=prompt("Enter value")
+
+if(!val) return
+
+masterData[type].push(val)
+
+renderData()
+
+saveData()
+
+}
+
+function renderData(){
+
+for(let key in masterData){
+
+let table=document.getElementById(key)
+
+if(!table) continue
+
+table.innerHTML=""
+
+masterData[key].forEach((v,i)=>{
+
+let row=document.createElement("tr")
+
+let td=document.createElement("td")
+
+let input=createText(v)
+
+input.oninput=function(){
+
+masterData[key][i]=this.value
+
+saveData()
+
+}
+
+td.appendChild(input)
+
+row.appendChild(td)
+
+let del=document.createElement("button")
+
+del.innerText="X"
+
+del.className="delete-btn"
+
+del.onclick=function(){
+
+masterData[key].splice(i,1)
+
+renderData()
+
+saveData()
+
+}
+
+let td2=document.createElement("td")
+
+td2.appendChild(del)
+
+row.appendChild(td2)
+
+table.appendChild(row)
+
+})
+
+}
 
 }
 
 function saveData(){
 
-let db={};
+let db={masterData:masterData}
 
 document.querySelectorAll(".section").forEach(section=>{
 
-let name=section.id;
+let name=section.id
 
-let rows=section.querySelectorAll("tbody tr");
+let rows=section.querySelectorAll("tbody tr")
 
-db[name]=[];
+db[name]=[]
 
 rows.forEach(r=>{
 
-let cells=r.querySelectorAll("input,select");
+let cells=r.querySelectorAll("input,select")
 
-let row=[];
+let row=[]
 
-cells.forEach(c=>row.push(c.value));
+cells.forEach(c=>row.push(c.value))
 
-db[name].push(row);
+db[name].push(row)
 
-});
+})
 
-});
+})
 
-localStorage.setItem(STORAGE,JSON.stringify(db));
+localStorage.setItem(STORAGE,JSON.stringify(db))
 
 }
 
 function loadData(){
 
-let db=localStorage.getItem(STORAGE);
+let db=localStorage.getItem(STORAGE)
 
-if(!db) return;
+if(!db) return
 
-db=JSON.parse(db);
+db=JSON.parse(db)
+
+masterData=db.masterData||masterData
+
+renderData()
 
 for(let section in db){
 
-currentTab=section;
+if(section==="masterData") continue
 
-db[section].forEach(row=>addRow(row));
+currentTab=section
+
+db[section].forEach(r=>addRow(r))
 
 }
 
-currentTab="pipeline";
+currentTab="pipeline"
 
 }
 
 function exportBackup(){
 
-let data=localStorage.getItem(STORAGE)||"{}";
+let data=localStorage.getItem(STORAGE)||"{}"
 
-let blob=new Blob([data],{type:"application/json"});
+let blob=new Blob([data],{type:"application/json"})
 
-let a=document.createElement("a");
+let a=document.createElement("a")
 
-a.href=URL.createObjectURL(blob);
+a.href=URL.createObjectURL(blob)
 
-a.download="operations_dashboard_backup.json";
+a.download="dashboard_backup.json"
 
-a.click();
+a.click()
 
 }
 
 function importBackup(){
 
-document.getElementById("fileInput").click();
+document.getElementById("fileInput").click()
 
 document.getElementById("fileInput").onchange=function(e){
 
-let file=e.target.files[0];
+let file=e.target.files[0]
 
-let reader=new FileReader();
+let reader=new FileReader()
 
 reader.onload=function(evt){
 
-localStorage.setItem(STORAGE,evt.target.result);
+localStorage.setItem(STORAGE,evt.target.result)
 
-location.reload();
+location.reload()
 
-};
+}
 
-reader.readAsText(file);
+reader.readAsText(file)
 
-};
+}
 
 }
 
 function clearAll(){
 
-if(!confirm("Clear all stored data?")) return;
+if(!confirm("Clear all data?")) return
 
-localStorage.removeItem(STORAGE);
+localStorage.removeItem(STORAGE)
 
-location.reload();
-
-}
-
-function addMaster(list){
-
-let value=prompt("Enter new value");
-
-if(!value) return;
-
-let dl=document.getElementById(list);
-
-let opt=document.createElement("option");
-
-opt.value=value;
-
-dl.appendChild(opt);
+location.reload()
 
 }
 
-loadData();
+loadData()
 
 </script>
 
