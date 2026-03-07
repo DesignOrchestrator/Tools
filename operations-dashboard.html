@@ -18,7 +18,7 @@ h1{ margin:0 0 5px 0; font-size:26px; }
 .toolbar button{ padding:5px 10px; margin-right:6px; border:none; background:#444; color:white; border-radius:4px; cursor:pointer; font-size:12px; }
 .toolbar button.danger{ background:#d9534f; }
 .chartArea{ display:flex; gap:10px; }
-.chartBox{ width:180px; height:140px; background:#fafafa; border:1px solid #ddd; border-radius:6px; padding:5px; }
+.chartBox{ width:220px; height:180px; background:#fafafa; border:1px solid #ddd; border-radius:6px; padding:5px; }
 .content{ padding:20px; }
 table{ width:100%; border-collapse:collapse; background:white; margin-bottom: 20px;}
 th,td{ border:1px solid #ddd; padding:6px; }
@@ -166,7 +166,6 @@ function switchTab(tab) {
 
 function dropdown(list, value) {
     let select = document.createElement("select");
-    // Add empty option
     let emptyOpt = document.createElement("option");
     emptyOpt.value = "";
     emptyOpt.text = "-- Select --";
@@ -201,6 +200,7 @@ function dateInput(v) {
 function addRow(data = [], targetTab = null) {
     let activeTab = targetTab || currentTab;
     let table = document.querySelector("#" + activeTab + " tbody");
+    if(!table) return;
     let row = document.createElement("tr");
     let headers = document.querySelectorAll("#" + activeTab + " thead th");
 
@@ -270,7 +270,14 @@ function updatePipelineChart() {
     pipelineChart = new Chart(document.getElementById("pipelineChart"), {
         type: "pie",
         data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+        options: { 
+            plugins: { 
+                legend: { display: false },
+                title: { display: true, text: 'Lead Stages', font: { size: 14 } } 
+            }, 
+            responsive: true, 
+            maintainAspectRatio: false 
+        }
     });
 }
 
@@ -280,7 +287,14 @@ function updateProjectChart() {
     projectChart = new Chart(document.getElementById("projectChart"), {
         type: "doughnut",
         data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+        options: { 
+            plugins: { 
+                legend: { display: false },
+                title: { display: true, text: 'Project Status', font: { size: 14 } } 
+            }, 
+            responsive: true, 
+            maintainAspectRatio: false 
+        }
     });
 }
 
@@ -290,7 +304,14 @@ function updateRevenueChart() {
     revenueChart = new Chart(document.getElementById("revenueChart"), {
         type: "pie",
         data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+        options: { 
+            plugins: { 
+                legend: { display: false },
+                title: { display: true, text: 'Payment Status', font: { size: 14 } } 
+            }, 
+            responsive: true, 
+            maintainAspectRatio: false 
+        }
     });
 }
 
@@ -300,7 +321,6 @@ function addMaster(type) {
     masterData[type].push(val);
     renderData();
     saveData();
-    // Refresh current table to show new dropdown values
     location.reload(); 
 }
 
@@ -326,6 +346,7 @@ function renderData() {
                 masterData[key].splice(i, 1);
                 renderData();
                 saveData();
+                location.reload();
             };
             td2.appendChild(del);
             row.appendChild(td1);
@@ -393,12 +414,11 @@ function importBackup() {
 }
 
 function clearAll() {
-    if (!confirm("Clear all data? This cannot be undone.")) return;
+    if (!confirm("Clear all data?")) return;
     localStorage.removeItem(STORAGE);
     location.reload();
 }
 
-// Initial Load
 window.onload = loadData;
 </script>
 
