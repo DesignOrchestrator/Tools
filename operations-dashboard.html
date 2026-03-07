@@ -2,33 +2,40 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Operations Dashboard</title>
+<title>Operations Dashboard Pro</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{ font-family:Arial; margin:0; background:#f5f7fb; }
+body{ font-family:Arial; margin:0; background:#f5f7fb; color: #333;}
 .header{ position:sticky; top:0; background:white; z-index:1000; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
 .headerTop{ display:flex; justify-content:space-between; align-items:flex-start; }
 .titleArea{ flex:1; }
-h1{ margin:0 0 5px 0; font-size:26px; }
-.tabs button{ padding:6px 12px; margin-right:5px; border:none; background:#2d7ff9; color:white; border-radius:4px; cursor:pointer; font-size:13px; }
-.tabs button.active{ background:#174ea6; }
-.toolbar{ margin-top:6px; }
-.toolbar button{ padding:5px 10px; margin-right:6px; border:none; background:#444; color:white; border-radius:4px; cursor:pointer; font-size:12px; }
+h1{ margin:0 0 5px 0; font-size:26px; color: #1a73e8; }
+.tabs button{ padding:8px 14px; margin-right:5px; border:none; background:#e8f0fe; color:#1a73e8; border-radius:4px; cursor:pointer; font-size:13px; font-weight: bold; transition: 0.2s;}
+.tabs button.active{ background:#1a73e8; color: white; }
+.toolbar{ margin-top:10px; display: flex; gap: 8px; align-items: center;}
+.toolbar button{ padding:6px 12px; border:none; background:#444; color:white; border-radius:4px; cursor:pointer; font-size:12px; }
 .toolbar button.danger{ background:#d9534f; }
 .chartArea{ display:flex; gap:10px; }
-.chartBox{ width:220px; height:180px; background:#fafafa; border:1px solid #ddd; border-radius:6px; padding:5px; }
+.chartBox{ width:200px; height:160px; background:#fff; border:1px solid #eee; border-radius:8px; padding:5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
 .content{ padding:20px; }
-table{ width:100%; border-collapse:collapse; background:white; margin-bottom: 20px;}
-th,td{ border:1px solid #ddd; padding:6px; }
-th{ background:#eef1f6; }
+
+/* Filter Bar Styling */
+.filter-bar { background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; border: 1px solid #ddd; }
+.filter-group { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; }
+.filter-bar input, .filter-bar select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; background: white; width: auto; min-width: 150px; }
+
+table{ width:100%; border-collapse:collapse; background:white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);}
+th,td{ border:1px solid #eee; padding:10px; text-align: left;}
+th{ background:#f8f9fa; font-size: 13px; text-transform: uppercase; color: #666;}
 select,input{ width:100%; border:none; outline:none; background:transparent; font-family: inherit; font-size: 13px;}
 .section{ display:none; }
 .section.active{ display:block; }
-.delete-btn{ background:#ff5c5c; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; }
-.dataTable{ max-width:500px; }
-.footer{ margin-top:10px; font-size:12px; color:#777; }
+.delete-btn{ background:#ff5c5c; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; }
+.dataTable{ max-width:600px; }
+.footer{ margin-top:20px; font-size:12px; color:#777; text-align: center; padding-bottom: 20px;}
+tr.hidden { display: none; }
 </style>
 </head>
 
@@ -44,13 +51,13 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
                 <button onclick="switchTab('projects')" id="tab-projects">Project Tracker</button>
                 <button onclick="switchTab('freelancers')" id="tab-freelancers">Freelancer Tracker</button>
                 <button onclick="switchTab('revenue')" id="tab-revenue">Revenue Tracker</button>
-                <button onclick="switchTab('data')" id="tab-data">Data</button>
+                <button onclick="switchTab('data')" id="tab-data">Data Settings</button>
             </div>
             <div class="toolbar">
-                <button onclick="addRow()">Add Row</button>
-                <button onclick="exportBackup()">Export Backup</button>
-                <button onclick="importBackup()">Import Backup</button>
-                <button class="danger" onclick="clearAll()">Clear All</button>
+                <button onclick="addRow()" style="background: #34a853;">+ Add Row</button>
+                <button onclick="exportBackup()">Export JSON</button>
+                <button onclick="importBackup()">Import JSON</button>
+                <button class="danger" onclick="clearAll()">Reset All</button>
                 <input type="file" id="fileInput" style="display:none">
             </div>
         </div>
@@ -63,7 +70,12 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
 </div>
 
 <div class="content">
+
     <div id="pipeline" class="section active">
+        <div class="filter-bar">
+            <div class="filter-group">Search: <input type="text" placeholder="Any field..." onkeyup="filterTable('pipeline')"></div>
+            <div class="filter-group">Stage: <select onchange="filterTable('pipeline', 3, this.value)" id="filter-pipeline-stage"></select></div>
+        </div>
         <table>
             <thead>
                 <tr><th>Company</th><th>Contact</th><th>Country</th><th>Stage</th><th>Value</th><th>Follow Up</th><th>Notes</th><th></th></tr>
@@ -73,6 +85,10 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
     </div>
 
     <div id="clients" class="section">
+        <div class="filter-bar">
+            <div class="filter-group">Search: <input type="text" placeholder="Search clients..." onkeyup="filterTable('clients')"></div>
+            <div class="filter-group">Status: <select onchange="filterTable('clients', 3, this.value)" id="filter-clients-status"></select></div>
+        </div>
         <table>
             <thead>
                 <tr><th>Client</th><th>Country</th><th>Contact</th><th>Status</th><th>Notes</th><th></th></tr>
@@ -82,6 +98,11 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
     </div>
 
     <div id="projects" class="section">
+        <div class="filter-bar">
+            <div class="filter-group">Search: <input type="text" placeholder="Search projects..." onkeyup="filterTable('projects')"></div>
+            <div class="filter-group">Stage: <select onchange="filterTable('projects', 3, this.value)" id="filter-projects-stage"></select></div>
+            <div class="filter-group">Status: <select onchange="filterTable('projects', 5, this.value)" id="filter-projects-status"></select></div>
+        </div>
         <table>
             <thead>
                 <tr><th>Project</th><th>Client</th><th>Type</th><th>Stage</th><th>Deadline</th><th>Status</th><th>Notes</th><th></th></tr>
@@ -91,6 +112,10 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
     </div>
 
     <div id="freelancers" class="section">
+        <div class="filter-bar">
+            <div class="filter-group">Search: <input type="text" placeholder="Search skills or names..." onkeyup="filterTable('freelancers')"></div>
+            <div class="filter-group">Availability: <select onchange="filterTable('freelancers', 4, this.value)" id="filter-freelancers-avail"></select></div>
+        </div>
         <table>
             <thead>
                 <tr><th>Name</th><th>Role</th><th>Country</th><th>Rate</th><th>Availability</th><th>Rating</th><th>Notes</th><th></th></tr>
@@ -100,6 +125,10 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
     </div>
 
     <div id="revenue" class="section">
+        <div class="filter-bar">
+            <div class="filter-group">Search: <input type="text" placeholder="Search billing..." onkeyup="filterTable('revenue')"></div>
+            <div class="filter-group">Payment: <select onchange="filterTable('revenue', 6, this.value)" id="filter-revenue-status"></select></div>
+        </div>
         <table>
             <thead>
                 <tr><th>Project</th><th>Client</th><th>Total</th><th>Paid</th><th>Balance</th><th>Date</th><th>Status</th><th></th></tr>
@@ -109,28 +138,36 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
     </div>
 
     <div id="data" class="section">
-        <h3>Companies</h3>
-        <button onclick="addMaster('companies')">Add Company</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="companies"></tbody></table>
-
-        <h3>Clients</h3>
-        <button onclick="addMaster('clientsList')">Add Client</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="clientsList"></tbody></table>
-
-        <h3>Projects</h3>
-        <button onclick="addMaster('projectsList')">Add Project</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="projectsList"></tbody></table>
-
-        <h3>Countries</h3>
-        <button onclick="addMaster('countries')">Add Country</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="countries"></tbody></table>
-
-        <h3>Roles</h3>
-        <button onclick="addMaster('roles')">Add Role</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="roles"></tbody></table>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h3>Companies</h3>
+                <button onclick="addMaster('companies')">Add Company</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="companies"></tbody></table>
+            </div>
+            <div>
+                <h3>Clients</h3>
+                <button onclick="addMaster('clientsList')">Add Client</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="clientsList"></tbody></table>
+            </div>
+            <div>
+                <h3>Projects</h3>
+                <button onclick="addMaster('projectsList')">Add Project</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="projectsList"></tbody></table>
+            </div>
+            <div>
+                <h3>Countries</h3>
+                <button onclick="addMaster('countries')">Add Country</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="countries"></tbody></table>
+            </div>
+            <div>
+                <h3>Roles</h3>
+                <button onclick="addMaster('roles')">Add Role</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="roles"></tbody></table>
+            </div>
+        </div>
     </div>
 
-    <div class="footer">Data stored locally in browser. Export backup regularly.</div>
+    <div class="footer">Data stored locally. Recommended: Export Backup after large changes.</div>
 </div>
 
 <script>
@@ -164,6 +201,62 @@ function switchTab(tab) {
     document.getElementById("tab-" + tab).classList.add("active");
 }
 
+// --- SEARCH AND FILTER LOGIC ---
+function filterTable(sectionId) {
+    const section = document.getElementById(sectionId);
+    const searchVal = section.querySelector('.filter-bar input').value.toLowerCase();
+    const rows = section.querySelectorAll('tbody tr');
+    
+    // Get all select filters in this section
+    const filters = section.querySelectorAll('.filter-bar select');
+
+    rows.forEach(row => {
+        let textMatch = false;
+        let filterMatch = true;
+        const cells = row.querySelectorAll('input, select');
+        
+        // 1. Check Global Search
+        cells.forEach(cell => {
+            if (cell.value.toLowerCase().includes(searchVal)) textMatch = true;
+        });
+
+        // 2. Check Column Filters
+        filters.forEach(f => {
+            if (f.value !== "") {
+                // We extract the column index from the onchange attribute for simplicity
+                const funcAttr = f.getAttribute('onchange');
+                const colIdx = parseInt(funcAttr.split(',')[1]);
+                if (cells[colIdx].value !== f.value) filterMatch = false;
+            }
+        });
+
+        if (textMatch && filterMatch) row.classList.remove('hidden');
+        else row.classList.add('hidden');
+    });
+}
+
+function populateFilterDropdowns() {
+    const setup = (id, list) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.innerHTML = '<option value="">All</option>';
+        list.forEach(item => {
+            let opt = document.createElement('option');
+            opt.value = item;
+            opt.innerText = item;
+            el.appendChild(opt);
+        });
+    };
+
+    setup('filter-pipeline-stage', stages);
+    setup('filter-clients-status', clientStatus);
+    setup('filter-projects-stage', projectStages);
+    setup('filter-projects-status', projectStatus);
+    setup('filter-freelancers-avail', availability);
+    setup('filter-revenue-status', paymentStatus);
+}
+
+// --- CORE FUNCTIONS ---
 function dropdown(list, value) {
     let select = document.createElement("select");
     let emptyOpt = document.createElement("option");
@@ -178,14 +271,14 @@ function dropdown(list, value) {
         select.appendChild(o);
     });
     if (value) select.value = value;
-    select.onchange = function() { saveData(); updateCharts(); };
+    select.onchange = function() { saveData(); updateCharts(); filterTable(currentTab); };
     return select;
 }
 
 function textInput(v) {
     let i = document.createElement("input");
     i.value = v || "";
-    i.oninput = saveData;
+    i.oninput = () => { saveData(); filterTable(currentTab); };
     return i;
 }
 
@@ -193,7 +286,7 @@ function dateInput(v) {
     let i = document.createElement("input");
     i.type = "date";
     i.value = v || "";
-    i.onchange = saveData;
+    i.onchange = () => { saveData(); filterTable(currentTab); };
     return i;
 }
 
@@ -242,10 +335,38 @@ function addRow(data = [], targetTab = null) {
     updateCharts();
 }
 
+// --- CHART LOGIC ---
 function updateCharts() {
-    updatePipelineChart();
-    updateProjectChart();
-    updateRevenueChart();
+    updatePieChart("pipelineChart", "Lead Stages", getColumnData("pipeline", 3));
+    updatePieChart("projectChart", "Project Status", getColumnData("projects", 5));
+    updatePieChart("revenueChart", "Payment Status", getColumnData("revenue", 6));
+}
+
+function updatePieChart(canvasId, title, rawData) {
+    let counts = countValues(rawData);
+    let ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    
+    // Destroy existing chart instance properly
+    if (canvasId === "pipelineChart" && pipelineChart) pipelineChart.destroy();
+    if (canvasId === "projectChart" && projectChart) projectChart.destroy();
+    if (canvasId === "revenueChart" && revenueChart) revenueChart.destroy();
+
+    let newChart = new Chart(ctx, {
+        type: (canvasId === "projectChart") ? "doughnut" : "pie",
+        data: { 
+            labels: Object.keys(counts), 
+            datasets: [{ data: Object.values(counts), backgroundColor: ['#4285f4', '#34a853', '#fbbc05', '#ea4335', '#9b59b6', '#1abc9c'] }] 
+        },
+        options: { 
+            plugins: { legend: { display: false }, title: { display: true, text: title } }, 
+            responsive: true, maintainAspectRatio: false 
+        }
+    });
+
+    if (canvasId === "pipelineChart") pipelineChart = newChart;
+    if (canvasId === "projectChart") projectChart = newChart;
+    if (canvasId === "revenueChart") revenueChart = newChart;
 }
 
 function getColumnData(section, colIndex) {
@@ -264,62 +385,11 @@ function countValues(arr) {
     return map;
 }
 
-function updatePipelineChart() {
-    let data = countValues(getColumnData("pipeline", 3));
-    if (pipelineChart) pipelineChart.destroy();
-    pipelineChart = new Chart(document.getElementById("pipelineChart"), {
-        type: "pie",
-        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { 
-            plugins: { 
-                legend: { display: false },
-                title: { display: true, text: 'Lead Stages', font: { size: 14 } } 
-            }, 
-            responsive: true, 
-            maintainAspectRatio: false 
-        }
-    });
-}
-
-function updateProjectChart() {
-    let data = countValues(getColumnData("projects", 5));
-    if (projectChart) projectChart.destroy();
-    projectChart = new Chart(document.getElementById("projectChart"), {
-        type: "doughnut",
-        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { 
-            plugins: { 
-                legend: { display: false },
-                title: { display: true, text: 'Project Status', font: { size: 14 } } 
-            }, 
-            responsive: true, 
-            maintainAspectRatio: false 
-        }
-    });
-}
-
-function updateRevenueChart() {
-    let data = countValues(getColumnData("revenue", 6));
-    if (revenueChart) revenueChart.destroy();
-    revenueChart = new Chart(document.getElementById("revenueChart"), {
-        type: "pie",
-        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { 
-            plugins: { 
-                legend: { display: false },
-                title: { display: true, text: 'Payment Status', font: { size: 14 } } 
-            }, 
-            responsive: true, 
-            maintainAspectRatio: false 
-        }
-    });
-}
-
+// --- MASTER DATA & STORAGE ---
 function addMaster(type) {
-    let val = prompt("Enter value");
+    let val = prompt("Enter new value for " + type);
     if (!val) return;
     masterData[type].push(val);
-    renderData();
     saveData();
     location.reload(); 
 }
@@ -332,25 +402,14 @@ function renderData() {
         masterData[key].forEach((v, i) => {
             let row = document.createElement("tr");
             let input = textInput(v);
-            input.onchange = function() {
-                masterData[key][i] = this.value;
-                saveData();
-            };
-            let td1 = document.createElement("td");
-            td1.appendChild(input);
+            input.onchange = function() { masterData[key][i] = this.value; saveData(); };
+            let td1 = document.createElement("td"); td1.appendChild(input);
             let td2 = document.createElement("td");
             let del = document.createElement("button");
-            del.innerText = "X";
-            del.className = "delete-btn";
-            del.onclick = function() {
-                masterData[key].splice(i, 1);
-                renderData();
-                saveData();
-                location.reload();
-            };
+            del.innerText = "X"; del.className = "delete-btn";
+            del.onclick = function() { masterData[key].splice(i, 1); saveData(); location.reload(); };
             td2.appendChild(del);
-            row.appendChild(td1);
-            row.appendChild(td2);
+            row.appendChild(td1); row.appendChild(td2);
             tableBody.appendChild(row);
         });
     }
@@ -375,6 +434,7 @@ function saveData() {
 
 function loadData() {
     let dbStr = localStorage.getItem(STORAGE);
+    populateFilterDropdowns();
     if (!dbStr) return;
     let db = JSON.parse(dbStr);
 
@@ -387,7 +447,6 @@ function loadData() {
             db[section].forEach(rowData => addRow(rowData, section));
         }
     });
-    
     updateCharts();
 }
 
@@ -396,7 +455,7 @@ function exportBackup() {
     let blob = new Blob([data], { type: "application/json" });
     let a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "dashboard_backup.json";
+    a.download = `ops_backup_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
 }
 
@@ -414,7 +473,7 @@ function importBackup() {
 }
 
 function clearAll() {
-    if (!confirm("Clear all data?")) return;
+    if (!confirm("This will delete ALL entries. Proceed?")) return;
     localStorage.removeItem(STORAGE);
     location.reload();
 }
