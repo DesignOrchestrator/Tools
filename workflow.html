@@ -32,8 +32,8 @@ font-size:18px;
 display:flex;
 gap:8px;
 margin-top:8px;
-flex-wrap:wrap;
 align-items:center;
+flex-wrap:wrap;
 }
 
 button{
@@ -57,7 +57,7 @@ border-radius:6px;
 /* CONTAINER */
 
 .container{
-max-width:1150px;
+max-width:1100px;
 margin:auto;
 padding:20px;
 }
@@ -83,14 +83,6 @@ justify-content:space-between;
 align-items:center;
 }
 
-.stage-header input{
-background:transparent;
-border:none;
-color:white;
-font-weight:600;
-width:200px;
-}
-
 .stage-header button{
 background:white;
 color:#2c7be5;
@@ -114,46 +106,6 @@ border-bottom:1px solid #eee;
 font-size:13px;
 }
 
-/* WORKFLOW PANEL */
-
-.workflow-panel{
-background:#f3f6fb;
-border-left:2px solid #dbe2f0;
-}
-
-.workflow-panel select{
-width:100%;
-padding:4px;
-}
-
-.workflow-cell{
-background:#f8faff;
-border-left:2px solid #e0e7f5;
-padding:6px;
-}
-
-.workflow-cell-inner{
-display:flex;
-gap:6px;
-align-items:center;
-}
-
-.workflow-cell-inner select{
-flex:1;
-}
-
-.workflow-cell-inner button{
-background:#e55353;
-color:white;
-border:none;
-padding:3px 6px;
-border-radius:4px;
-cursor:pointer;
-font-size:11px;
-}
-
-/* INPUT */
-
 input{
 width:100%;
 border:none;
@@ -168,7 +120,18 @@ outline:none;
 
 .col-step{width:70px}
 .col-ref{width:220px}
-.col-workflow{width:180px}
+.col-delete{width:50px}
+.col-workflow{width:160px}
+
+.delete-btn{
+background:#e55353;
+color:white;
+border:none;
+padding:4px 6px;
+border-radius:4px;
+cursor:pointer;
+font-size:11px;
+}
 
 </style>
 </head>
@@ -184,7 +147,6 @@ outline:none;
 <select id="workflowSelect" onchange="changeWorkflow()"></select>
 
 <button class="success" onclick="addWorkflow()">Add Workflow</button>
-<button class="primary" onclick="addStage()">Add Stage</button>
 
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
 <button class="secondary" onclick="importBackup()">Import Backup</button>
@@ -210,6 +172,8 @@ const STORAGE_KEY="workflow_template_data"
 let data=[]
 let currentWorkflow="Unassigned"
 
+/* LOAD */
+
 function load(){
 
 let saved=localStorage.getItem(STORAGE_KEY)
@@ -231,10 +195,11 @@ localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 
 function getWorkflows(){
 
-let set=new Set(data.map(r=>r.workflow||"Unassigned"))
-set.add("Unassigned")
+let workflows=new Set(data.map(r=>r.workflow || "Unassigned"))
 
-return [...set]
+workflows.add("Unassigned")
+
+return [...workflows]
 
 }
 
@@ -245,13 +210,13 @@ select.innerHTML=""
 
 getWorkflows().forEach(w=>{
 
-let opt=document.createElement("option")
-opt.value=w
-opt.textContent=w
+let option=document.createElement("option")
+option.value=w
+option.textContent=w
 
-if(w===currentWorkflow) opt.selected=true
+if(w===currentWorkflow) option.selected=true
 
-select.appendChild(opt)
+select.appendChild(option)
 
 })
 
@@ -261,21 +226,6 @@ function changeWorkflow(){
 
 currentWorkflow=document.getElementById("workflowSelect").value
 
-render()
-
-}
-
-/* ADD WORKFLOW */
-
-function addWorkflow(){
-
-let name=prompt("Workflow name")
-
-if(!name) return
-
-currentWorkflow=name
-
-renderWorkflowSelector()
 render()
 
 }
@@ -297,26 +247,6 @@ groups[stage].push(row)
 })
 
 return groups
-
-}
-
-/* ADD STAGE */
-
-function addStage(){
-
-let stage=prompt("Stage name")
-
-if(!stage) return
-
-data.push({
-workflow:currentWorkflow,
-stage:stage,
-action:"",
-ref:""
-})
-
-save()
-render()
 
 }
 
@@ -344,7 +274,7 @@ let header=document.createElement("div")
 header.className="stage-header"
 
 header.innerHTML=`
-<input value="${stage}" onchange="renameStage('${stage}',this.value)">
+<span>${stageIndex+1}. ${stage}</span>
 <button onclick="addRow('${stage}')">+</button>
 `
 
@@ -359,7 +289,8 @@ table.innerHTML=`
 <th class="col-step">Step</th>
 <th>Action</th>
 <th class="col-ref">Reference</th>
-<th class="col-workflow workflow-panel">Workflow</th>
+<th class="col-workflow">Workflow</th>
+<th class="col-delete"></th>
 </tr>
 </thead>
 
@@ -373,7 +304,7 @@ stageRows.forEach((row,rowIndex)=>{
 
 let index=data.indexOf(row)
 
-let step=\`\${stageIndex+1}.\${rowIndex+1}\`
+let step=`${stageIndex+1}.${rowIndex+1}`
 
 let tr=document.createElement("tr")
 
@@ -386,23 +317,20 @@ tr.innerHTML=`
 </td>
 
 <td>
-<input value="${row.ref||""}" onchange="update(${index},'ref',this.value)">
+<input value="${row.ref||""}" placeholder="link / template"
+onchange="update(${index},'ref',this.value)">
 </td>
 
-<td class="workflow-cell">
-
-<div class="workflow-cell-inner">
-
+<td>
 <select onchange="update(${index},'workflow',this.value)">
 ${getWorkflows().map(w=>`
 <option ${w=== (row.workflow||"Unassigned")?'selected':''}>${w}</option>
 `).join("")}
 </select>
+</td>
 
-<button onclick="deleteRow(${index})">✕</button>
-
-</div>
-
+<td>
+<button class="delete-btn" onclick="deleteRow(${index})">✕</button>
 </td>
 
 `
@@ -418,22 +346,27 @@ stageBox.appendChild(body)
 
 container.appendChild(stageBox)
 
+/* COLLAPSE */
+
+header.onclick=(e)=>{
+if(e.target.tagName!=="BUTTON"){
+body.style.display=body.style.display==="none"?"block":"none"
+}
+}
+
 })
 
 }
 
-/* RENAME STAGE */
+/* ADD WORKFLOW */
 
-function renameStage(oldName,newName){
+function addWorkflow(){
 
-data.forEach(r=>{
-if(r.stage===oldName && r.workflow===currentWorkflow){
-r.stage=newName
-}
-})
+let name=prompt("Workflow name")
 
-save()
-render()
+if(!name) return
+
+renderWorkflowSelector()
 
 }
 
