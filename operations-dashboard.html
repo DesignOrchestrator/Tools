@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Operations Dashboard</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -167,29 +166,16 @@ color:#777;
 </div>
 
 <div class="chartArea">
-
-<div class="chartBox">
-<canvas id="pipelineChart"></canvas>
-</div>
-
-<div class="chartBox">
-<canvas id="projectChart"></canvas>
-</div>
-
-<div class="chartBox">
-<canvas id="revenueChart"></canvas>
-</div>
-
+<div class="chartBox"><canvas id="pipelineChart"></canvas></div>
+<div class="chartBox"><canvas id="projectChart"></canvas></div>
+<div class="chartBox"><canvas id="revenueChart"></canvas></div>
 </div>
 
 </div>
 
 <div class="content">
 
-<!-- PIPELINE -->
-
 <div id="pipeline" class="section active">
-
 <table>
 <thead>
 <tr>
@@ -205,13 +191,9 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
-
 </div>
 
-<!-- CLIENT -->
-
 <div id="clients" class="section">
-
 <table>
 <thead>
 <tr>
@@ -225,13 +207,9 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
-
 </div>
 
-<!-- PROJECT -->
-
 <div id="projects" class="section">
-
 <table>
 <thead>
 <tr>
@@ -247,13 +225,9 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
-
 </div>
 
-<!-- FREELANCER -->
-
 <div id="freelancers" class="section">
-
 <table>
 <thead>
 <tr>
@@ -269,13 +243,9 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
-
 </div>
 
-<!-- REVENUE -->
-
 <div id="revenue" class="section">
-
 <table>
 <thead>
 <tr>
@@ -291,10 +261,7 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
-
 </div>
-
-<!-- DATA -->
 
 <div id="data" class="section">
 
@@ -328,7 +295,7 @@ Data stored locally in browser. Export backup regularly.
 
 <script>
 
-const STORAGE="ops_dashboard_v8"
+const STORAGE="ops_dashboard_persistent"
 
 let currentTab="pipeline"
 
@@ -349,21 +316,16 @@ const availability=["Available","Busy","Unavailable"]
 const rating=["1","2","3","4","5"]
 const paymentStatus=["Pending","Partial","Paid","Overdue"]
 
-function buildDropdown(list,value){
-
+function dropdown(list,value){
 let select=document.createElement("select")
-
 list.forEach(v=>{
 let opt=document.createElement("option")
 opt.value=v
 opt.text=v
 select.appendChild(opt)
 })
-
 if(value) select.value=value
-
 select.onchange=saveData
-
 return select
 }
 
@@ -378,19 +340,19 @@ for(let i=0;i<headers.length-1;i++){
 let name=headers[i].innerText
 let field
 
-if(name==="Company") field=buildDropdown(masterData.companies,data[i])
-else if(name==="Client") field=buildDropdown(masterData.clientsList,data[i])
-else if(name==="Project") field=buildDropdown(masterData.projectsList,data[i])
-else if(name==="Country") field=buildDropdown(masterData.countries,data[i])
-else if(name==="Role") field=buildDropdown(masterData.roles,data[i])
-else if(name==="Stage" && currentTab==="pipeline") field=buildDropdown(stages,data[i])
-else if(name==="Stage" && currentTab==="projects") field=buildDropdown(projectStages,data[i])
-else if(name==="Type") field=buildDropdown(projectTypes,data[i])
-else if(name==="Status" && currentTab==="projects") field=buildDropdown(projectStatus,data[i])
-else if(name==="Status" && currentTab==="clients") field=buildDropdown(clientStatus,data[i])
-else if(name==="Status" && currentTab==="revenue") field=buildDropdown(paymentStatus,data[i])
-else if(name==="Availability") field=buildDropdown(availability,data[i])
-else if(name==="Rating") field=buildDropdown(rating,data[i])
+if(name==="Company") field=dropdown(masterData.companies,data[i])
+else if(name==="Client") field=dropdown(masterData.clientsList,data[i])
+else if(name==="Project") field=dropdown(masterData.projectsList,data[i])
+else if(name==="Country") field=dropdown(masterData.countries,data[i])
+else if(name==="Role") field=dropdown(masterData.roles,data[i])
+else if(name==="Stage" && currentTab==="pipeline") field=dropdown(stages,data[i])
+else if(name==="Stage" && currentTab==="projects") field=dropdown(projectStages,data[i])
+else if(name==="Type") field=dropdown(projectTypes,data[i])
+else if(name==="Status" && currentTab==="projects") field=dropdown(projectStatus,data[i])
+else if(name==="Status" && currentTab==="clients") field=dropdown(clientStatus,data[i])
+else if(name==="Status" && currentTab==="revenue") field=dropdown(paymentStatus,data[i])
+else if(name==="Availability") field=dropdown(availability,data[i])
+else if(name==="Rating") field=dropdown(rating,data[i])
 else if(name==="Date" || name==="Deadline" || name==="Follow Up"){
 field=document.createElement("input")
 field.type="date"
@@ -423,67 +385,6 @@ td.appendChild(del)
 row.appendChild(td)
 
 table.appendChild(row)
-
-saveData()
-
-}
-
-function addMaster(type){
-
-let val=prompt("Enter value")
-if(!val) return
-
-masterData[type].push(val)
-
-renderData()
-saveData()
-
-}
-
-function renderData(){
-
-for(let key in masterData){
-
-let table=document.getElementById(key)
-if(!table) continue
-
-table.innerHTML=""
-
-masterData[key].forEach((v,i)=>{
-
-let row=document.createElement("tr")
-
-let input=document.createElement("input")
-input.value=v
-
-input.oninput=function(){
-masterData[key][i]=this.value
-saveData()
-}
-
-let td=document.createElement("td")
-td.appendChild(input)
-row.appendChild(td)
-
-let del=document.createElement("button")
-del.innerText="X"
-del.className="delete-btn"
-
-del.onclick=function(){
-masterData[key].splice(i,1)
-renderData()
-saveData()
-}
-
-let td2=document.createElement("td")
-td2.appendChild(del)
-row.appendChild(td2)
-
-table.appendChild(row)
-
-})
-
-}
 
 }
 
@@ -527,11 +428,65 @@ for(let section in db){
 if(section==="masterData") continue
 
 currentTab=section
-db[section].forEach(r=>addRow(r))
+db[section].forEach(rowData=>addRow(rowData))
 
 }
 
 currentTab="pipeline"
+
+}
+
+function addMaster(type){
+let val=prompt("Enter value")
+if(!val) return
+masterData[type].push(val)
+renderData()
+saveData()
+}
+
+function renderData(){
+
+for(let key in masterData){
+
+let table=document.getElementById(key)
+if(!table) continue
+
+table.innerHTML=""
+
+masterData[key].forEach((v,i)=>{
+
+let row=document.createElement("tr")
+
+let input=document.createElement("input")
+input.value=v
+input.oninput=function(){
+masterData[key][i]=this.value
+saveData()
+}
+
+let td=document.createElement("td")
+td.appendChild(input)
+row.appendChild(td)
+
+let del=document.createElement("button")
+del.innerText="X"
+del.className="delete-btn"
+
+del.onclick=function(){
+masterData[key].splice(i,1)
+renderData()
+saveData()
+}
+
+let td2=document.createElement("td")
+td2.appendChild(del)
+row.appendChild(td2)
+
+table.appendChild(row)
+
+})
+
+}
 
 }
 
@@ -550,9 +505,7 @@ event.target.classList.add("active")
 function exportBackup(){
 
 let data=localStorage.getItem(STORAGE)||"{}"
-
 let blob=new Blob([data],{type:"application/json"})
-
 let a=document.createElement("a")
 a.href=URL.createObjectURL(blob)
 a.download="dashboard_backup.json"
@@ -570,10 +523,8 @@ let file=e.target.files[0]
 let reader=new FileReader()
 
 reader.onload=function(evt){
-
 localStorage.setItem(STORAGE,evt.target.result)
 location.reload()
-
 }
 
 reader.readAsText(file)
