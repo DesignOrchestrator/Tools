@@ -32,8 +32,8 @@ font-size:18px;
 display:flex;
 gap:8px;
 margin-top:8px;
-align-items:center;
 flex-wrap:wrap;
+align-items:center;
 }
 
 button{
@@ -81,6 +81,14 @@ font-weight:600;
 display:flex;
 justify-content:space-between;
 align-items:center;
+}
+
+.stage-header input{
+background:transparent;
+border:none;
+color:white;
+font-weight:600;
+width:200px;
 }
 
 .stage-header button{
@@ -147,6 +155,7 @@ font-size:11px;
 <select id="workflowSelect" onchange="changeWorkflow()"></select>
 
 <button class="success" onclick="addWorkflow()">Add Workflow</button>
+<button class="primary" onclick="addStage()">Add Stage</button>
 
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
 <button class="secondary" onclick="importBackup()">Import Backup</button>
@@ -195,11 +204,10 @@ localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 
 function getWorkflows(){
 
-let workflows=new Set(data.map(r=>r.workflow || "Unassigned"))
+let set=new Set(data.map(r=>r.workflow||"Unassigned"))
+set.add("Unassigned")
 
-workflows.add("Unassigned")
-
-return [...workflows]
+return [...set]
 
 }
 
@@ -210,13 +218,13 @@ select.innerHTML=""
 
 getWorkflows().forEach(w=>{
 
-let option=document.createElement("option")
-option.value=w
-option.textContent=w
+let opt=document.createElement("option")
+opt.value=w
+opt.textContent=w
 
-if(w===currentWorkflow) option.selected=true
+if(w===currentWorkflow) opt.selected=true
 
-select.appendChild(option)
+select.appendChild(opt)
 
 })
 
@@ -226,6 +234,21 @@ function changeWorkflow(){
 
 currentWorkflow=document.getElementById("workflowSelect").value
 
+render()
+
+}
+
+/* ADD WORKFLOW */
+
+function addWorkflow(){
+
+let name=prompt("Workflow name")
+
+if(!name) return
+
+currentWorkflow=name
+
+renderWorkflowSelector()
 render()
 
 }
@@ -247,6 +270,26 @@ groups[stage].push(row)
 })
 
 return groups
+
+}
+
+/* ADD STAGE */
+
+function addStage(){
+
+let stage=prompt("Stage name")
+
+if(!stage) return
+
+data.push({
+workflow:currentWorkflow,
+stage:stage,
+action:"",
+ref:""
+})
+
+save()
+render()
 
 }
 
@@ -274,7 +317,7 @@ let header=document.createElement("div")
 header.className="stage-header"
 
 header.innerHTML=`
-<span>${stageIndex+1}. ${stage}</span>
+<input value="${stage}" onchange="renameStage('${stage}',this.value)">
 <button onclick="addRow('${stage}')">+</button>
 `
 
@@ -317,8 +360,7 @@ tr.innerHTML=`
 </td>
 
 <td>
-<input value="${row.ref||""}" placeholder="link / template"
-onchange="update(${index},'ref',this.value)">
+<input value="${row.ref||""}" onchange="update(${index},'ref',this.value)">
 </td>
 
 <td>
@@ -346,27 +388,22 @@ stageBox.appendChild(body)
 
 container.appendChild(stageBox)
 
-/* COLLAPSE */
-
-header.onclick=(e)=>{
-if(e.target.tagName!=="BUTTON"){
-body.style.display=body.style.display==="none"?"block":"none"
-}
-}
-
 })
 
 }
 
-/* ADD WORKFLOW */
+/* RENAME STAGE */
 
-function addWorkflow(){
+function renameStage(oldName,newName){
 
-let name=prompt("Workflow name")
+data.forEach(r=>{
+if(r.stage===oldName && r.workflow===currentWorkflow){
+r.stage=newName
+}
+})
 
-if(!name) return
-
-renderWorkflowSelector()
+save()
+render()
 
 }
 
