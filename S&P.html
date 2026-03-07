@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html>
 <head>
 
@@ -125,7 +124,6 @@ height:220px;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -318,12 +316,12 @@ Recommended Fee
 <h3>Proposal Generator</h3>
 
 <label>Scope Description</label>
-
 <textarea id="scopeText" style="height:120px"></textarea>
 
 <br><br>
 
-<button onclick="generateProposal()">Generate</button> <button onclick="window.print()">Export PDF</button>
+<button onclick="generateProposal()">Generate</button>
+<button onclick="window.print()">Export PDF</button>
 
 <div id="proposalOutput"></div>
 
@@ -347,7 +345,9 @@ Recommended Fee
 
 <h3>Data Tools</h3>
 
-<button onclick="exportData()">Export Backup</button> <button onclick="importData()">Import Backup</button> <button class="danger" onclick="clearAll()">Clear All</button>
+<button onclick="exportData()">Export Backup</button>
+<button onclick="importData()">Import Backup</button>
+<button class="danger" onclick="clearAll()">Clear All</button>
 
 <input type="file" id="fileInput" style="display:none">
 
@@ -368,11 +368,9 @@ localStorage.setItem("sp_tool",JSON.stringify(db))
 function openTab(id){
 
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
-
 document.getElementById(id).classList.add("active")
 
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-
 event.target.classList.add("active")
 
 }
@@ -448,7 +446,6 @@ let buffered=internal*(1+buffer/100)
 let fee=buffered*(1+margin/100)
 
 document.getElementById("cost").innerText=Math.round(buffered)
-
 document.getElementById("fee").innerText=Math.round(fee)
 
 drawChart(outsource,founder)
