@@ -7,686 +7,399 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
-body{
-font-family:Arial;
-margin:0;
-background:#f5f7fb;
-}
-
-.header{
-position:sticky;
-top:0;
-background:white;
-z-index:1000;
-padding:10px 20px;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-
-.headerTop{
-display:flex;
-justify-content:space-between;
-align-items:flex-start;
-}
-
-.titleArea{
-flex:1;
-}
-
-h1{
-margin:0 0 5px 0;
-font-size:26px;
-}
-
-.tabs button{
-padding:6px 12px;
-margin-right:5px;
-border:none;
-background:#2d7ff9;
-color:white;
-border-radius:4px;
-cursor:pointer;
-font-size:13px;
-}
-
-.tabs button.active{
-background:#174ea6;
-}
-
-.toolbar{
-margin-top:6px;
-}
-
-.toolbar button{
-padding:5px 10px;
-margin-right:6px;
-border:none;
-background:#444;
-color:white;
-border-radius:4px;
-cursor:pointer;
-font-size:12px;
-}
-
-.toolbar button.danger{
-background:#d9534f;
-}
-
-.chartArea{
-display:flex;
-gap:10px;
-}
-
-.chartBox{
-width:180px;
-height:140px;
-background:#fafafa;
-border:1px solid #ddd;
-border-radius:6px;
-padding:5px;
-}
-
-.content{
-padding:20px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-background:white;
-}
-
-th,td{
-border:1px solid #ddd;
-padding:6px;
-}
-
-th{
-background:#eef1f6;
-}
-
-select,input{
-width:100%;
-border:none;
-outline:none;
-background:transparent;
-}
-
-.section{
-display:none;
-}
-
-.section.active{
-display:block;
-}
-
-.delete-btn{
-background:#ff5c5c;
-color:white;
-border:none;
-padding:3px 7px;
-border-radius:3px;
-cursor:pointer;
-}
-
-.dataTable{
-max-width:500px;
-}
-
-.footer{
-margin-top:10px;
-font-size:12px;
-color:#777;
-}
-
+body{ font-family:Arial; margin:0; background:#f5f7fb; }
+.header{ position:sticky; top:0; background:white; z-index:1000; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+.headerTop{ display:flex; justify-content:space-between; align-items:flex-start; }
+.titleArea{ flex:1; }
+h1{ margin:0 0 5px 0; font-size:26px; }
+.tabs button{ padding:6px 12px; margin-right:5px; border:none; background:#2d7ff9; color:white; border-radius:4px; cursor:pointer; font-size:13px; }
+.tabs button.active{ background:#174ea6; }
+.toolbar{ margin-top:6px; }
+.toolbar button{ padding:5px 10px; margin-right:6px; border:none; background:#444; color:white; border-radius:4px; cursor:pointer; font-size:12px; }
+.toolbar button.danger{ background:#d9534f; }
+.chartArea{ display:flex; gap:10px; }
+.chartBox{ width:180px; height:140px; background:#fafafa; border:1px solid #ddd; border-radius:6px; padding:5px; }
+.content{ padding:20px; }
+table{ width:100%; border-collapse:collapse; background:white; margin-bottom: 20px;}
+th,td{ border:1px solid #ddd; padding:6px; }
+th{ background:#eef1f6; }
+select,input{ width:100%; border:none; outline:none; background:transparent; font-family: inherit; font-size: 13px;}
+.section{ display:none; }
+.section.active{ display:block; }
+.delete-btn{ background:#ff5c5c; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; }
+.dataTable{ max-width:500px; }
+.footer{ margin-top:10px; font-size:12px; color:#777; }
 </style>
 </head>
 
 <body>
 
 <div class="header">
-
-<div class="headerTop">
-
-<div class="titleArea">
-
-<h1>Operations Dashboard</h1>
-
-<div class="tabs">
-<button onclick="switchTab('pipeline')" class="active">Lead Pipeline</button>
-<button onclick="switchTab('clients')">Client Tracker</button>
-<button onclick="switchTab('projects')">Project Tracker</button>
-<button onclick="switchTab('freelancers')">Freelancer Tracker</button>
-<button onclick="switchTab('revenue')">Revenue Tracker</button>
-<button onclick="switchTab('data')">Data</button>
-</div>
-
-<div class="toolbar">
-<button onclick="addRow()">Add Row</button>
-<button onclick="exportBackup()">Export Backup</button>
-<button onclick="importBackup()">Import Backup</button>
-<button class="danger" onclick="clearAll()">Clear All</button>
-<input type="file" id="fileInput" style="display:none">
-</div>
-
-</div>
-
-<div class="chartArea">
-
-<div class="chartBox">
-<canvas id="pipelineChart"></canvas>
-</div>
-
-<div class="chartBox">
-<canvas id="projectChart"></canvas>
-</div>
-
-<div class="chartBox">
-<canvas id="revenueChart"></canvas>
-</div>
-
-</div>
-
-</div>
-
+    <div class="headerTop">
+        <div class="titleArea">
+            <h1>Operations Dashboard</h1>
+            <div class="tabs">
+                <button onclick="switchTab('pipeline')" id="tab-pipeline" class="active">Lead Pipeline</button>
+                <button onclick="switchTab('clients')" id="tab-clients">Client Tracker</button>
+                <button onclick="switchTab('projects')" id="tab-projects">Project Tracker</button>
+                <button onclick="switchTab('freelancers')" id="tab-freelancers">Freelancer Tracker</button>
+                <button onclick="switchTab('revenue')" id="tab-revenue">Revenue Tracker</button>
+                <button onclick="switchTab('data')" id="tab-data">Data</button>
+            </div>
+            <div class="toolbar">
+                <button onclick="addRow()">Add Row</button>
+                <button onclick="exportBackup()">Export Backup</button>
+                <button onclick="importBackup()">Import Backup</button>
+                <button class="danger" onclick="clearAll()">Clear All</button>
+                <input type="file" id="fileInput" style="display:none">
+            </div>
+        </div>
+        <div class="chartArea">
+            <div class="chartBox"><canvas id="pipelineChart"></canvas></div>
+            <div class="chartBox"><canvas id="projectChart"></canvas></div>
+            <div class="chartBox"><canvas id="revenueChart"></canvas></div>
+        </div>
+    </div>
 </div>
 
 <div class="content">
+    <div id="pipeline" class="section active">
+        <table>
+            <thead>
+                <tr><th>Company</th><th>Contact</th><th>Country</th><th>Stage</th><th>Value</th><th>Follow Up</th><th>Notes</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-<!-- PIPELINE -->
+    <div id="clients" class="section">
+        <table>
+            <thead>
+                <tr><th>Client</th><th>Country</th><th>Contact</th><th>Status</th><th>Notes</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-<div id="pipeline" class="section active">
+    <div id="projects" class="section">
+        <table>
+            <thead>
+                <tr><th>Project</th><th>Client</th><th>Type</th><th>Stage</th><th>Deadline</th><th>Status</th><th>Notes</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-<table>
-<thead>
-<tr>
-<th>Company</th>
-<th>Contact</th>
-<th>Country</th>
-<th>Stage</th>
-<th>Value</th>
-<th>Follow Up</th>
-<th>Notes</th>
-<th></th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+    <div id="freelancers" class="section">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Role</th><th>Country</th><th>Rate</th><th>Availability</th><th>Rating</th><th>Notes</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-</div>
+    <div id="revenue" class="section">
+        <table>
+            <thead>
+                <tr><th>Project</th><th>Client</th><th>Total</th><th>Paid</th><th>Balance</th><th>Date</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-<!-- CLIENT -->
+    <div id="data" class="section">
+        <h3>Companies</h3>
+        <button onclick="addMaster('companies')">Add Company</button>
+        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="companies"></tbody></table>
 
-<div id="clients" class="section">
+        <h3>Clients</h3>
+        <button onclick="addMaster('clientsList')">Add Client</button>
+        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="clientsList"></tbody></table>
 
-<table>
-<thead>
-<tr>
-<th>Client</th>
-<th>Country</th>
-<th>Contact</th>
-<th>Status</th>
-<th>Notes</th>
-<th></th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+        <h3>Projects</h3>
+        <button onclick="addMaster('projectsList')">Add Project</button>
+        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="projectsList"></tbody></table>
 
-</div>
+        <h3>Countries</h3>
+        <button onclick="addMaster('countries')">Add Country</button>
+        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="countries"></tbody></table>
 
-<!-- PROJECT -->
+        <h3>Roles</h3>
+        <button onclick="addMaster('roles')">Add Role</button>
+        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="roles"></tbody></table>
+    </div>
 
-<div id="projects" class="section">
-
-<table>
-<thead>
-<tr>
-<th>Project</th>
-<th>Client</th>
-<th>Type</th>
-<th>Stage</th>
-<th>Deadline</th>
-<th>Status</th>
-<th>Notes</th>
-<th></th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
-</div>
-
-<!-- FREELANCER -->
-
-<div id="freelancers" class="section">
-
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Role</th>
-<th>Country</th>
-<th>Rate</th>
-<th>Availability</th>
-<th>Rating</th>
-<th>Notes</th>
-<th></th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
-</div>
-
-<!-- REVENUE -->
-
-<div id="revenue" class="section">
-
-<table>
-<thead>
-<tr>
-<th>Project</th>
-<th>Client</th>
-<th>Total</th>
-<th>Paid</th>
-<th>Balance</th>
-<th>Date</th>
-<th>Status</th>
-<th></th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
-</div>
-
-<!-- DATA -->
-
-<div id="data" class="section">
-
-<h3>Companies</h3>
-<button onclick="addMaster('companies')">Add</button>
-<table class="dataTable"><tbody id="companies"></tbody></table>
-
-<h3>Clients</h3>
-<button onclick="addMaster('clientsList')">Add</button>
-<table class="dataTable"><tbody id="clientsList"></tbody></table>
-
-<h3>Projects</h3>
-<button onclick="addMaster('projectsList')">Add</button>
-<table class="dataTable"><tbody id="projectsList"></tbody></table>
-
-<h3>Countries</h3>
-<button onclick="addMaster('countries')">Add</button>
-<table class="dataTable"><tbody id="countries"></tbody></table>
-
-<h3>Roles</h3>
-<button onclick="addMaster('roles')">Add</button>
-<table class="dataTable"><tbody id="roles"></tbody></table>
-
-</div>
-
-<div class="footer">
-Data stored locally in browser. Export backup regularly.
-</div>
-
+    <div class="footer">Data stored locally in browser. Export backup regularly.</div>
 </div>
 
 <script>
+const STORAGE = "ops_dashboard_v7";
+let currentTab = "pipeline";
 
-const STORAGE="ops_dashboard_v7"
+let masterData = {
+    companies: [],
+    clientsList: [],
+    projectsList: [],
+    countries: [],
+    roles: []
+};
 
-let currentTab="pipeline"
+const stages = ["Lead Identified", "Contacted", "Responded", "Discovery", "Proposal Sent", "Negotiation", "Won", "Lost"];
+const projectStages = ["Planning", "Kickoff", "Production", "Coordination", "Review", "Delivery", "Completed"];
+const projectTypes = ["Residential", "Commercial", "Mixed Use", "Industrial", "Other"];
+const projectStatus = ["Planning", "In Progress", "On Hold", "Completed"];
+const clientStatus = ["Active", "Inactive", "Completed", "Potential"];
+const availability = ["Available", "Busy", "Unavailable"];
+const rating = ["1", "2", "3", "4", "5"];
+const paymentStatus = ["Pending", "Partial", "Paid", "Overdue"];
 
-let masterData={
-companies:[],
-clientsList:[],
-projectsList:[],
-countries:[],
-roles:[]
+let pipelineChart, projectChart, revenueChart;
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(tab).classList.add("active");
+    document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+    document.getElementById("tab-" + tab).classList.add("active");
 }
 
-const stages=["Lead Identified","Contacted","Responded","Discovery","Proposal Sent","Negotiation","Won","Lost"]
-const projectStages=["Planning","Kickoff","Production","Coordination","Review","Delivery","Completed"]
-const projectTypes=["Residential","Commercial","Mixed Use","Industrial","Other"]
-const projectStatus=["Planning","In Progress","On Hold","Completed"]
-const clientStatus=["Active","Inactive","Completed","Potential"]
-const availability=["Available","Busy","Unavailable"]
-const rating=["1","2","3","4","5"]
-const paymentStatus=["Pending","Partial","Paid","Overdue"]
+function dropdown(list, value) {
+    let select = document.createElement("select");
+    // Add empty option
+    let emptyOpt = document.createElement("option");
+    emptyOpt.value = "";
+    emptyOpt.text = "-- Select --";
+    select.appendChild(emptyOpt);
 
-let pipelineChart,projectChart,revenueChart
-
-function switchTab(tab){
-
-currentTab=tab
-
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
-document.getElementById(tab).classList.add("active")
-
-document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"))
-event.target.classList.add("active")
-
+    list.forEach(v => {
+        let o = document.createElement("option");
+        o.value = v;
+        o.text = v;
+        select.appendChild(o);
+    });
+    if (value) select.value = value;
+    select.onchange = function() { saveData(); updateCharts(); };
+    return select;
 }
 
-function dropdown(list,value){
-
-let select=document.createElement("select")
-
-list.forEach(v=>{
-let o=document.createElement("option")
-o.value=v
-o.text=v
-select.appendChild(o)
-})
-
-if(value) select.value=value
-
-select.onchange=function(){
-saveData()
-updateCharts()
+function textInput(v) {
+    let i = document.createElement("input");
+    i.value = v || "";
+    i.oninput = saveData;
+    return i;
 }
 
-return select
-
+function dateInput(v) {
+    let i = document.createElement("input");
+    i.type = "date";
+    i.value = v || "";
+    i.onchange = saveData;
+    return i;
 }
 
-function textInput(v){
-let i=document.createElement("input")
-i.value=v||""
-i.oninput=saveData
-return i
+function addRow(data = [], targetTab = null) {
+    let activeTab = targetTab || currentTab;
+    let table = document.querySelector("#" + activeTab + " tbody");
+    let row = document.createElement("tr");
+    let headers = document.querySelectorAll("#" + activeTab + " thead th");
+
+    for (let i = 0; i < headers.length - 1; i++) {
+        let name = headers[i].innerText;
+        let field;
+
+        if (name === "Company") field = dropdown(masterData.companies, data[i]);
+        else if (name === "Client") field = dropdown(masterData.clientsList, data[i]);
+        else if (name === "Project") field = dropdown(masterData.projectsList, data[i]);
+        else if (name === "Country") field = dropdown(masterData.countries, data[i]);
+        else if (name === "Role") field = dropdown(masterData.roles, data[i]);
+        else if (name === "Stage" && activeTab === "pipeline") field = dropdown(stages, data[i]);
+        else if (name === "Stage" && activeTab === "projects") field = dropdown(projectStages, data[i]);
+        else if (name === "Type") field = dropdown(projectTypes, data[i]);
+        else if (name === "Status" && activeTab === "projects") field = dropdown(projectStatus, data[i]);
+        else if (name === "Status" && activeTab === "clients") field = dropdown(clientStatus, data[i]);
+        else if (name === "Status" && activeTab === "revenue") field = dropdown(paymentStatus, data[i]);
+        else if (name === "Availability") field = dropdown(availability, data[i]);
+        else if (name === "Rating") field = dropdown(rating, data[i]);
+        else if (name === "Date" || name === "Deadline" || name === "Follow Up") field = dateInput(data[i]);
+        else field = textInput(data[i]);
+
+        let td = document.createElement("td");
+        td.appendChild(field);
+        row.appendChild(td);
+    }
+
+    let delTd = document.createElement("td");
+    let del = document.createElement("button");
+    del.innerText = "X";
+    del.className = "delete-btn";
+    del.onclick = function() { row.remove(); saveData(); updateCharts(); };
+    delTd.appendChild(del);
+    row.appendChild(delTd);
+
+    table.appendChild(row);
+    saveData();
+    updateCharts();
 }
 
-function dateInput(v){
-let i=document.createElement("input")
-i.type="date"
-i.value=v||""
-i.onchange=saveData
-return i
+function updateCharts() {
+    updatePipelineChart();
+    updateProjectChart();
+    updateRevenueChart();
 }
 
-function addRow(data=[]){
-
-let table=document.querySelector("#"+currentTab+" tbody")
-let row=document.createElement("tr")
-let headers=document.querySelectorAll("#"+currentTab+" thead th")
-
-for(let i=0;i<headers.length-1;i++){
-
-let name=headers[i].innerText
-let field
-
-if(name==="Company") field=dropdown(masterData.companies,data[i])
-else if(name==="Client") field=dropdown(masterData.clientsList,data[i])
-else if(name==="Project") field=dropdown(masterData.projectsList,data[i])
-else if(name==="Country") field=dropdown(masterData.countries,data[i])
-else if(name==="Role") field=dropdown(masterData.roles,data[i])
-else if(name==="Stage" && currentTab==="pipeline") field=dropdown(stages,data[i])
-else if(name==="Stage" && currentTab==="projects") field=dropdown(projectStages,data[i])
-else if(name==="Type") field=dropdown(projectTypes,data[i])
-else if(name==="Status" && currentTab==="projects") field=dropdown(projectStatus,data[i])
-else if(name==="Status" && currentTab==="clients") field=dropdown(clientStatus,data[i])
-else if(name==="Status" && currentTab==="revenue") field=dropdown(paymentStatus,data[i])
-else if(name==="Availability") field=dropdown(availability,data[i])
-else if(name==="Rating") field=dropdown(rating,data[i])
-else if(name==="Date" || name==="Deadline" || name==="Follow Up") field=dateInput(data[i])
-else field=textInput(data[i])
-
-let td=document.createElement("td")
-td.appendChild(field)
-row.appendChild(td)
-
+function getColumnData(section, colIndex) {
+    let rows = document.querySelectorAll("#" + section + " tbody tr");
+    let arr = [];
+    rows.forEach(r => {
+        let cells = r.querySelectorAll("input,select");
+        if (cells[colIndex] && cells[colIndex].value) arr.push(cells[colIndex].value);
+    });
+    return arr;
 }
 
-let del=document.createElement("button")
-del.innerText="X"
-del.className="delete-btn"
-
-del.onclick=function(){
-row.remove()
-saveData()
-updateCharts()
+function countValues(arr) {
+    let map = {};
+    arr.forEach(v => { map[v] = (map[v] || 0) + 1; });
+    return map;
 }
 
-let td=document.createElement("td")
-td.appendChild(del)
-row.appendChild(td)
-
-table.appendChild(row)
-
-saveData()
-updateCharts()
-
+function updatePipelineChart() {
+    let data = countValues(getColumnData("pipeline", 3));
+    if (pipelineChart) pipelineChart.destroy();
+    pipelineChart = new Chart(document.getElementById("pipelineChart"), {
+        type: "pie",
+        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
+        options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+    });
 }
 
-function updateCharts(){
-
-updatePipelineChart()
-updateProjectChart()
-updateRevenueChart()
-
+function updateProjectChart() {
+    let data = countValues(getColumnData("projects", 5));
+    if (projectChart) projectChart.destroy();
+    projectChart = new Chart(document.getElementById("projectChart"), {
+        type: "doughnut",
+        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
+        options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+    });
 }
 
-function getColumnData(section,colIndex){
-
-let rows=document.querySelectorAll("#"+section+" tbody tr")
-let arr=[]
-
-rows.forEach(r=>{
-let cells=r.querySelectorAll("input,select")
-if(cells[colIndex]) arr.push(cells[colIndex].value)
-})
-
-return arr
-
+function updateRevenueChart() {
+    let data = countValues(getColumnData("revenue", 6));
+    if (revenueChart) revenueChart.destroy();
+    revenueChart = new Chart(document.getElementById("revenueChart"), {
+        type: "pie",
+        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
+        options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+    });
 }
 
-function countValues(arr){
-
-let map={}
-arr.forEach(v=>{map[v]=(map[v]||0)+1})
-return map
-
+function addMaster(type) {
+    let val = prompt("Enter value");
+    if (!val) return;
+    masterData[type].push(val);
+    renderData();
+    saveData();
+    // Refresh current table to show new dropdown values
+    location.reload(); 
 }
 
-function updatePipelineChart(){
-
-let data=countValues(getColumnData("pipeline",3))
-
-if(pipelineChart) pipelineChart.destroy()
-
-pipelineChart=new Chart(document.getElementById("pipelineChart"),{
-type:"pie",
-data:{labels:Object.keys(data),datasets:[{data:Object.values(data)}]},
-options:{plugins:{legend:{display:false}}}
-})
-
+function renderData() {
+    for (let key in masterData) {
+        let tableBody = document.getElementById(key);
+        if (!tableBody) continue;
+        tableBody.innerHTML = "";
+        masterData[key].forEach((v, i) => {
+            let row = document.createElement("tr");
+            let input = textInput(v);
+            input.onchange = function() {
+                masterData[key][i] = this.value;
+                saveData();
+            };
+            let td1 = document.createElement("td");
+            td1.appendChild(input);
+            let td2 = document.createElement("td");
+            let del = document.createElement("button");
+            del.innerText = "X";
+            del.className = "delete-btn";
+            del.onclick = function() {
+                masterData[key].splice(i, 1);
+                renderData();
+                saveData();
+            };
+            td2.appendChild(del);
+            row.appendChild(td1);
+            row.appendChild(td2);
+            tableBody.appendChild(row);
+        });
+    }
 }
 
-function updateProjectChart(){
-
-let data=countValues(getColumnData("projects",5))
-
-if(projectChart) projectChart.destroy()
-
-projectChart=new Chart(document.getElementById("projectChart"),{
-type:"doughnut",
-data:{labels:Object.keys(data),datasets:[{data:Object.values(data)}]},
-options:{plugins:{legend:{display:false}}}
-})
-
+function saveData() {
+    let db = { masterData: masterData };
+    const sections = ["pipeline", "clients", "projects", "freelancers", "revenue"];
+    sections.forEach(name => {
+        let sectionDiv = document.getElementById(name);
+        let rows = sectionDiv.querySelectorAll("tbody tr");
+        db[name] = [];
+        rows.forEach(r => {
+            let cells = r.querySelectorAll("input,select");
+            let rowData = [];
+            cells.forEach(c => rowData.push(c.value));
+            db[name].push(rowData);
+        });
+    });
+    localStorage.setItem(STORAGE, JSON.stringify(db));
 }
 
-function updateRevenueChart(){
+function loadData() {
+    let dbStr = localStorage.getItem(STORAGE);
+    if (!dbStr) return;
+    let db = JSON.parse(dbStr);
 
-let data=countValues(getColumnData("revenue",6))
+    if (db.masterData) masterData = db.masterData;
+    renderData();
 
-if(revenueChart) revenueChart.destroy()
-
-revenueChart=new Chart(document.getElementById("revenueChart"),{
-type:"pie",
-data:{labels:Object.keys(data),datasets:[{data:Object.values(data)}]},
-options:{plugins:{legend:{display:false}}}
-})
-
+    const sections = ["pipeline", "clients", "projects", "freelancers", "revenue"];
+    sections.forEach(section => {
+        if (db[section]) {
+            db[section].forEach(rowData => addRow(rowData, section));
+        }
+    });
+    
+    updateCharts();
 }
 
-function addMaster(type){
-
-let val=prompt("Enter value")
-if(!val) return
-
-masterData[type].push(val)
-
-renderData()
-saveData()
-
+function exportBackup() {
+    let data = localStorage.getItem(STORAGE) || "{}";
+    let blob = new Blob([data], { type: "application/json" });
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "dashboard_backup.json";
+    a.click();
 }
 
-function renderData(){
-
-for(let key in masterData){
-
-let table=document.getElementById(key)
-if(!table) continue
-
-table.innerHTML=""
-
-masterData[key].forEach((v,i)=>{
-
-let row=document.createElement("tr")
-
-let input=textInput(v)
-
-input.oninput=function(){
-masterData[key][i]=this.value
-saveData()
+function importBackup() {
+    document.getElementById("fileInput").click();
+    document.getElementById("fileInput").onchange = function(e) {
+        let file = e.target.files[0];
+        let reader = new FileReader();
+        reader.onload = function(evt) {
+            localStorage.setItem(STORAGE, evt.target.result);
+            location.reload();
+        };
+        reader.readAsText(file);
+    };
 }
 
-let td=document.createElement("td")
-td.appendChild(input)
-row.appendChild(td)
-
-let del=document.createElement("button")
-del.innerText="X"
-del.className="delete-btn"
-
-del.onclick=function(){
-masterData[key].splice(i,1)
-renderData()
-saveData()
+function clearAll() {
+    if (!confirm("Clear all data? This cannot be undone.")) return;
+    localStorage.removeItem(STORAGE);
+    location.reload();
 }
 
-let td2=document.createElement("td")
-td2.appendChild(del)
-row.appendChild(td2)
-
-table.appendChild(row)
-
-})
-
-}
-
-}
-
-function saveData(){
-
-let db={masterData}
-
-document.querySelectorAll(".section").forEach(section=>{
-
-let name=section.id
-let rows=section.querySelectorAll("tbody tr")
-
-db[name]=[]
-
-rows.forEach(r=>{
-let cells=r.querySelectorAll("input,select")
-let row=[]
-cells.forEach(c=>row.push(c.value))
-db[name].push(row)
-})
-
-})
-
-localStorage.setItem(STORAGE,JSON.stringify(db))
-
-}
-
-function loadData(){
-
-let db=localStorage.getItem(STORAGE)
-if(!db) return
-
-db=JSON.parse(db)
-
-masterData=db.masterData||masterData
-
-renderData()
-
-for(let section in db){
-
-if(section==="masterData") continue
-
-currentTab=section
-db[section].forEach(r=>addRow(r))
-
-}
-
-currentTab="pipeline"
-
-updateCharts()
-
-}
-
-function exportBackup(){
-
-let data=localStorage.getItem(STORAGE)||"{}"
-
-let blob=new Blob([data],{type:"application/json"})
-
-let a=document.createElement("a")
-a.href=URL.createObjectURL(blob)
-a.download="dashboard_backup.json"
-a.click()
-
-}
-
-function importBackup(){
-
-document.getElementById("fileInput").click()
-
-document.getElementById("fileInput").onchange=function(e){
-
-let file=e.target.files[0]
-let reader=new FileReader()
-
-reader.onload=function(evt){
-
-localStorage.setItem(STORAGE,evt.target.result)
-location.reload()
-
-}
-
-reader.readAsText(file)
-
-}
-
-}
-
-function clearAll(){
-
-if(!confirm("Clear all data?")) return
-
-localStorage.removeItem(STORAGE)
-location.reload()
-
-}
-
-loadData()
-
+// Initial Load
+window.onload = loadData;
 </script>
 
 </body>
