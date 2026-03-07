@@ -2,22 +2,18 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Business Operations Dashboard</title>
+<title>Operations Dashboard</title>
 
 <style>
 
 body{
-font-family:Arial, sans-serif;
+font-family:Arial;
 margin:20px;
 background:#f5f7fb;
 }
 
 h1{
 margin-bottom:10px;
-}
-
-.tabs{
-margin-bottom:15px;
 }
 
 .tabs button{
@@ -35,7 +31,7 @@ background:#174ea6;
 }
 
 .toolbar{
-margin-bottom:12px;
+margin:12px 0;
 }
 
 .toolbar button{
@@ -61,7 +57,6 @@ background:white;
 th,td{
 border:1px solid #ddd;
 padding:6px;
-text-align:left;
 }
 
 th{
@@ -75,21 +70,25 @@ outline:none;
 background:transparent;
 }
 
-.delete-btn{
-background:#ff5c5c;
-color:white;
-border:none;
-padding:3px 8px;
-border-radius:3px;
-cursor:pointer;
-}
-
 .section{
 display:none;
 }
 
 .section.active{
 display:block;
+}
+
+.delete-btn{
+background:#ff5c5c;
+color:white;
+border:none;
+padding:4px 8px;
+border-radius:3px;
+cursor:pointer;
+}
+
+.master-controls{
+margin-bottom:10px;
 }
 
 .footer{
@@ -99,11 +98,12 @@ color:#777;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<h1>Business Operations Dashboard</h1>
+<h1>Operations Dashboard</h1>
 
 <div class="tabs">
 <button onclick="switchTab('pipeline')" class="active">Lead Pipeline</button>
@@ -121,8 +121,19 @@ color:#777;
 <input type="file" id="fileInput" style="display:none">
 </div>
 
+<div class="master-controls">
+
+<button onclick="addMaster('companies')">Add Company</button>
+<button onclick="addMaster('clients')">Add Client</button>
+<button onclick="addMaster('projects')">Add Project</button>
+<button onclick="addMaster('countries')">Add Country</button>
+
+</div>
+
 <!-- PIPELINE -->
+
 <div id="pipeline" class="section active">
+
 <table>
 <thead>
 <tr>
@@ -131,17 +142,22 @@ color:#777;
 <th>Country</th>
 <th>Stage</th>
 <th>Potential Value</th>
-<th>Last Action</th>
+<th>Next Follow Up</th>
 <th>Notes</th>
 <th></th>
 </tr>
 </thead>
+
 <tbody></tbody>
+
 </table>
+
 </div>
 
 <!-- CLIENT -->
+
 <div id="clients" class="section">
+
 <table>
 <thead>
 <tr>
@@ -154,12 +170,17 @@ color:#777;
 <th></th>
 </tr>
 </thead>
+
 <tbody></tbody>
+
 </table>
+
 </div>
 
 <!-- PROJECT -->
+
 <div id="projects" class="section">
+
 <table>
 <thead>
 <tr>
@@ -173,12 +194,17 @@ color:#777;
 <th></th>
 </tr>
 </thead>
+
 <tbody></tbody>
+
 </table>
+
 </div>
 
 <!-- FREELANCER -->
+
 <div id="freelancers" class="section">
+
 <table>
 <thead>
 <tr>
@@ -192,12 +218,17 @@ color:#777;
 <th></th>
 </tr>
 </thead>
+
 <tbody></tbody>
+
 </table>
+
 </div>
 
 <!-- REVENUE -->
+
 <div id="revenue" class="section">
+
 <table>
 <thead>
 <tr>
@@ -206,95 +237,145 @@ color:#777;
 <th>Total Fee</th>
 <th>Paid</th>
 <th>Balance</th>
+<th>Payment Date</th>
 <th>Status</th>
-<th>Notes</th>
 <th></th>
 </tr>
 </thead>
+
 <tbody></tbody>
+
 </table>
+
 </div>
 
+<datalist id="companies"></datalist>
+<datalist id="clients"></datalist>
+<datalist id="projects"></datalist>
+<datalist id="countries"></datalist>
+
 <div class="footer">
-Data stored locally in browser. Export backup regularly.
+Data stored locally. Export backup regularly.
 </div>
 
 <script>
 
-const STORAGE="operations_dashboard";
+const STORAGE="ops_dashboard";
+
 let currentTab="pipeline";
 
-const dropdowns={
-pipeline:["Lead Identified","Contacted","Responded","Discovery","Proposal Sent","Negotiation","Won","Lost"],
-clients:["Active","Inactive","Completed","Potential"],
-projects:["Planning","Kickoff","Production","Coordination","Review","Delivery","Completed"],
-freelancers:["Available","Busy","Unavailable"],
-revenue:["Pending","Partial","Paid","Overdue"]
-};
+const stageOptions=[
+"Lead Identified","Contacted","Responded","Discovery",
+"Proposal Sent","Negotiation","Won","Lost"
+];
+
+const projectStages=[
+"Planning","Kickoff","Production","Coordination","Review","Delivery","Completed"
+];
+
+const availabilityOptions=[
+"Available","Busy","Unavailable"
+];
+
+const ratingOptions=["1","2","3","4","5"];
+
+const paymentStatus=["Pending","Partial","Paid","Overdue"];
 
 function switchTab(tab){
+
+currentTab=tab;
+
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.getElementById(tab).classList.add("active");
 
 document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
 event.target.classList.add("active");
 
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+}
 
-document.getElementById(tab).classList.add("active");
+function createInput(type,list){
 
-currentTab=tab;
+let input=document.createElement("input");
+
+input.type=type;
+
+if(list) input.setAttribute("list",list);
+
+input.oninput=saveData;
+
+return input;
 
 }
 
-function addRow(data={}){
-
-let table=document.querySelector("#"+currentTab+" tbody");
-let row=document.createElement("tr");
-
-let columns=document.querySelectorAll("#"+currentTab+" thead th").length-1;
-
-for(let i=0;i<columns;i++){
-
-let td=document.createElement("td");
-
-if(i===3 && dropdowns[currentTab]){
+function createSelect(options){
 
 let select=document.createElement("select");
 
-dropdowns[currentTab].forEach(v=>{
-let opt=document.createElement("option");
-opt.value=v;
-opt.text=v;
-select.appendChild(opt);
+options.forEach(v=>{
+let o=document.createElement("option");
+o.value=v;
+o.text=v;
+select.appendChild(o);
 });
 
-select.value=data[i]||dropdowns[currentTab][0];
 select.onchange=saveData;
 
-td.appendChild(select);
-
-}else{
-
-let input=document.createElement("input");
-input.value=data[i]||"";
-input.oninput=saveData;
-td.appendChild(input);
+return select;
 
 }
+
+function addRow(data=[]){
+
+let table=document.querySelector("#"+currentTab+" tbody");
+
+let row=document.createElement("tr");
+
+let headers=document.querySelectorAll("#"+currentTab+" thead th");
+
+for(let i=0;i<headers.length-1;i++){
+
+let td=document.createElement("td");
+
+let name=headers[i].innerText;
+
+let field;
+
+if(name==="Company") field=createInput("text","companies");
+else if(name==="Client") field=createInput("text","clients");
+else if(name==="Project") field=createInput("text","projects");
+else if(name==="Country") field=createInput("text","countries");
+else if(name.includes("Date") || name==="Deadline" || name.includes("Follow")) field=createInput("date");
+else if(name==="Stage" && currentTab==="pipeline") field=createSelect(stageOptions);
+else if(name==="Stage" && currentTab==="projects") field=createSelect(projectStages);
+else if(name==="Availability") field=createSelect(availabilityOptions);
+else if(name==="Rating") field=createSelect(ratingOptions);
+else if(name==="Status" && currentTab==="revenue") field=createSelect(paymentStatus);
+else field=createInput("text");
+
+if(data[i]) field.value=data[i];
+
+td.appendChild(field);
 
 row.appendChild(td);
 
 }
 
 let del=document.createElement("button");
+
 del.innerText="X";
+
 del.className="delete-btn";
 
 del.onclick=function(){
+
 row.remove();
+
 saveData();
+
 };
 
 let td=document.createElement("td");
+
 td.appendChild(del);
 
 row.appendChild(td);
@@ -345,14 +426,9 @@ db=JSON.parse(db);
 
 for(let section in db){
 
-let table=document.querySelector("#"+section+" tbody");
-
-db[section].forEach(row=>{
-
 currentTab=section;
-addRow(row);
 
-});
+db[section].forEach(row=>addRow(row));
 
 }
 
@@ -369,6 +445,7 @@ let blob=new Blob([data],{type:"application/json"});
 let a=document.createElement("a");
 
 a.href=URL.createObjectURL(blob);
+
 a.download="operations_dashboard_backup.json";
 
 a.click();
@@ -406,6 +483,22 @@ if(!confirm("Clear all stored data?")) return;
 localStorage.removeItem(STORAGE);
 
 location.reload();
+
+}
+
+function addMaster(list){
+
+let value=prompt("Enter new value");
+
+if(!value) return;
+
+let dl=document.getElementById(list);
+
+let opt=document.createElement("option");
+
+opt.value=value;
+
+dl.appendChild(opt);
 
 }
 
