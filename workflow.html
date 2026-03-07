@@ -30,10 +30,10 @@ font-size:18px;
 
 .toolbar{
 display:flex;
-flex-wrap:wrap;
 gap:8px;
 margin-top:8px;
 align-items:center;
+flex-wrap:wrap;
 }
 
 button{
@@ -54,12 +54,6 @@ padding:5px;
 border-radius:6px;
 }
 
-.infobar{
-margin-top:6px;
-font-size:12px;
-color:#555;
-}
-
 /* CONTAINER */
 
 .container{
@@ -68,7 +62,7 @@ margin:auto;
 padding:20px;
 }
 
-/* STAGE BOX */
+/* STAGE */
 
 .stage-box{
 background:white;
@@ -127,6 +121,7 @@ outline:none;
 .col-step{width:70px}
 .col-ref{width:220px}
 .col-delete{width:50px}
+.col-workflow{width:160px}
 
 .delete-btn{
 background:#e55353;
@@ -162,11 +157,6 @@ font-size:11px;
 
 </div>
 
-<div class="infobar">
-Stages: <span id="stageCount">0</span> |
-Steps: <span id="stepCount">0</span>
-</div>
-
 </div>
 
 <div class="container">
@@ -180,7 +170,9 @@ Steps: <span id="stepCount">0</span>
 const STORAGE_KEY="workflow_template_data"
 
 let data=[]
-let currentWorkflow=null
+let currentWorkflow="Unassigned"
+
+/* LOAD */
 
 function load(){
 
@@ -190,7 +182,8 @@ if(saved){
 data=JSON.parse(saved)
 }
 
-initWorkflow()
+renderWorkflowSelector()
+render()
 
 }
 
@@ -202,36 +195,30 @@ localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 
 function getWorkflows(){
 
-let list=[...new Set(data.map(r=>r.workflow).filter(Boolean))]
+let workflows=new Set(data.map(r=>r.workflow || "Unassigned"))
 
-if(list.length===0){
-list=["Workflow 1"]
-}
+workflows.add("Unassigned")
 
-return list
+return [...workflows]
 
 }
 
-function initWorkflow(){
-
-let workflows=getWorkflows()
+function renderWorkflowSelector(){
 
 let select=document.getElementById("workflowSelect")
-
 select.innerHTML=""
 
-workflows.forEach(w=>{
+getWorkflows().forEach(w=>{
 
-let opt=document.createElement("option")
-opt.value=w
-opt.textContent=w
-select.appendChild(opt)
+let option=document.createElement("option")
+option.value=w
+option.textContent=w
+
+if(w===currentWorkflow) option.selected=true
+
+select.appendChild(option)
 
 })
-
-currentWorkflow=workflows[0]
-
-render()
 
 }
 
@@ -251,7 +238,7 @@ let groups={}
 
 rows.forEach(row=>{
 
-let stage=row.stage||"Unassigned"
+let stage=row.stage || "Unassigned Stage"
 
 if(!groups[stage]) groups[stage]=[]
 
@@ -267,18 +254,16 @@ return groups
 
 function render(){
 
+renderWorkflowSelector()
+
 let container=document.getElementById("workflow")
 container.innerHTML=""
 
-let rows=data.filter(r=>r.workflow===currentWorkflow)
+let rows=data.filter(r=>(r.workflow||"Unassigned")===currentWorkflow)
 
 let groups=groupStages(rows)
-let stages=Object.keys(groups)
 
-document.getElementById("stageCount").innerText=stages.length
-document.getElementById("stepCount").innerText=rows.length
-
-stages.forEach((stage,stageIndex)=>{
+Object.keys(groups).forEach((stage,stageIndex)=>{
 
 let stageRows=groups[stage]
 
@@ -304,6 +289,7 @@ table.innerHTML=`
 <th class="col-step">Step</th>
 <th>Action</th>
 <th class="col-ref">Reference</th>
+<th class="col-workflow">Workflow</th>
 <th class="col-delete"></th>
 </tr>
 </thead>
@@ -333,6 +319,14 @@ tr.innerHTML=`
 <td>
 <input value="${row.ref||""}" placeholder="link / template"
 onchange="update(${index},'ref',this.value)">
+</td>
+
+<td>
+<select onchange="update(${index},'workflow',this.value)">
+${getWorkflows().map(w=>`
+<option ${w=== (row.workflow||"Unassigned")?'selected':''}>${w}</option>
+`).join("")}
+</select>
 </td>
 
 <td>
@@ -372,15 +366,7 @@ let name=prompt("Workflow name")
 
 if(!name) return
 
-data.push({
-workflow:name,
-stage:"Stage 1",
-action:"",
-ref:""
-})
-
-save()
-initWorkflow()
+renderWorkflowSelector()
 
 }
 
@@ -405,7 +391,9 @@ render()
 function update(i,key,val){
 
 data[i][key]=val
+
 save()
+render()
 
 }
 
@@ -414,6 +402,7 @@ save()
 function deleteRow(i){
 
 data.splice(i,1)
+
 save()
 render()
 
@@ -426,8 +415,11 @@ function exportBackup(){
 let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
 
 let a=document.createElement("a")
+
 a.href=URL.createObjectURL(blob)
+
 a.download="workflow-template-backup.json"
+
 a.click()
 
 }
@@ -447,7 +439,7 @@ reader.onload=function(){
 data=JSON.parse(reader.result)
 
 save()
-initWorkflow()
+render()
 
 }
 
@@ -459,15 +451,13 @@ file.click()
 
 }
 
-/* CLEAR */
-
 function clearData(){
 
 if(confirm("Clear all workflow steps?")){
 
 data=[]
 save()
-initWorkflow()
+render()
 
 }
 
