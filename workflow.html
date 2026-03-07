@@ -5,6 +5,8 @@
 <meta charset="UTF-8">
 <title>Workflow Template</title>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
 
 body{
@@ -48,6 +50,7 @@ font-size:12px;
 .success{background:#28a745;color:white;}
 .secondary{background:#6c757d;color:white;}
 .danger{background:#e55353;color:white;}
+.import{background:#8e44ad;color:white;}
 
 select{
 padding:5px;
@@ -157,6 +160,8 @@ font-size:11px;
 <button class="success" onclick="addWorkflow()">Add Workflow</button>
 <button class="primary" onclick="addStage()">Add Stage</button>
 
+<button class="import" onclick="importWorkflow()">Import Workflow</button>
+
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
 <button class="secondary" onclick="importBackup()">Import Backup</button>
 
@@ -180,8 +185,6 @@ const STORAGE_KEY="workflow_template_data"
 
 let data=[]
 let currentWorkflow="Unassigned"
-
-/* LOAD */
 
 function load(){
 
@@ -233,7 +236,6 @@ select.appendChild(opt)
 function changeWorkflow(){
 
 currentWorkflow=document.getElementById("workflowSelect").value
-
 render()
 
 }
@@ -247,8 +249,27 @@ let name=prompt("Workflow name")
 if(!name) return
 
 currentWorkflow=name
-
 renderWorkflowSelector()
+render()
+
+}
+
+/* ADD STAGE */
+
+function addStage(){
+
+let stage=prompt("Stage name")
+
+if(!stage) return
+
+data.push({
+workflow:currentWorkflow,
+stage:stage,
+action:"",
+ref:""
+})
+
+save()
 render()
 
 }
@@ -270,26 +291,6 @@ groups[stage].push(row)
 })
 
 return groups
-
-}
-
-/* ADD STAGE */
-
-function addStage(){
-
-let stage=prompt("Stage name")
-
-if(!stage) return
-
-data.push({
-workflow:currentWorkflow,
-stage:stage,
-action:"",
-ref:""
-})
-
-save()
-render()
 
 }
 
@@ -392,34 +393,69 @@ container.appendChild(stageBox)
 
 }
 
-/* RENAME STAGE */
+/* IMPORT WORKFLOW */
 
-function renameStage(oldName,newName){
+function importWorkflow(){
 
-data.forEach(r=>{
-if(r.stage===oldName && r.workflow===currentWorkflow){
-r.stage=newName
-}
-})
+let file=document.getElementById("fileInput")
+
+file.accept=".json,.csv,.xlsx"
+
+file.onchange=e=>{
+
+let reader=new FileReader()
+
+let f=e.target.files[0]
+
+if(f.name.endsWith(".json")){
+
+reader.onload=function(){
+
+let rows=JSON.parse(reader.result)
+
+data=data.concat(rows)
 
 save()
 render()
 
 }
 
-/* ADD ROW */
+reader.readAsText(f)
 
-function addRow(stage){
+}
+
+else{
+
+reader.onload=function(evt){
+
+let workbook=XLSX.read(evt.target.result,{type:'binary'})
+let sheet=workbook.Sheets[workbook.SheetNames[0]]
+
+let json=XLSX.utils.sheet_to_json(sheet)
+
+json.forEach(r=>{
 
 data.push({
-workflow:currentWorkflow,
-stage:stage,
-action:"",
-ref:""
+workflow:r.Workflow || "Imported Workflow",
+stage:r.Stage || "Imported Stage",
+action:r.Action || "",
+ref:r.Reference || ""
+})
+
 })
 
 save()
 render()
+
+}
+
+reader.readAsBinaryString(f)
+
+}
+
+}
+
+file.click()
 
 }
 
@@ -461,7 +497,7 @@ a.click()
 
 }
 
-/* IMPORT */
+/* IMPORT BACKUP */
 
 function importBackup(){
 
