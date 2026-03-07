@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scope & Proposal Calculator</title>
+
+<style>
+
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f4f6f9;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+}
+
+h1{
+margin-bottom:5px;
+}
+
+.subtitle{
+color:#666;
+margin-bottom:20px;
+}
+
+.section{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:25px;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+.section-title{
+font-weight:bold;
+margin-bottom:10px;
+font-size:18px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+}
+
+th{
+background:#3f6fd1;
+color:white;
+padding:10px;
+font-size:14px;
+}
+
+td{
+padding:8px;
+border-bottom:1px solid #eee;
+}
+
+input{
+width:100%;
+padding:6px;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+button{
+padding:6px 10px;
+border:none;
+background:#3f6fd1;
+color:white;
+border-radius:5px;
+cursor:pointer;
+}
+
+button.delete{
+background:#d9534f;
+}
+
+.summary{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:15px;
+margin-top:20px;
+}
+
+.card{
+background:#f8f9fc;
+padding:15px;
+border-radius:8px;
+text-align:center;
+}
+
+.card-title{
+font-size:12px;
+color:#777;
+}
+
+.card-value{
+font-size:20px;
+font-weight:bold;
+margin-top:5px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Scope & Proposal Calculator</h1>
+<div class="subtitle">Estimate project hours, cost, and proposal pricing</div>
+
+<!-- PROJECT INFO -->
+
+<div class="section">
+
+<div class="section-title">Project Information</div>
+
+<table>
+<tr>
+<td>Project Name</td>
+<td><input id="projectName"></td>
+
+<td>Project Type</td>
+<td><input id="projectType"></td>
+
+<td>Storeys</td>
+<td><input id="storeys" type="number"></td>
+</tr>
+
+<tr>
+<td>Estimated GFA (sqm)</td>
+<td><input id="gfa" type="number"></td>
+
+<td>Unit Count</td>
+<td><input id="units" type="number"></td>
+
+<td>Country</td>
+<td><input id="country"></td>
+</tr>
+</table>
+
+</div>
+
+<!-- SCOPE TABLE -->
+
+<div class="section">
+
+<div class="section-title">Scope Definition</div>
+
+<table id="scopeTable">
+
+<thead>
+<tr>
+<th>Scope Item</th>
+<th>Description</th>
+<th>Hours</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<br>
+
+<button onclick="addScope()">+ Add Scope Item</button>
+
+</div>
+
+<!-- PROPOSAL ESTIMATION -->
+
+<div class="section">
+
+<div class="section-title">Proposal Estimation</div>
+
+<table>
+
+<tr>
+<td>Outsource Hourly Rate ($)</td>
+<td><input id="outRate" value="12"></td>
+
+<td>Founder Hourly Value ($)</td>
+<td><input id="founderRate" value="60"></td>
+</tr>
+
+<tr>
+<td>Buffer %</td>
+<td><input id="buffer" value="20"></td>
+
+<td>Profit Margin %</td>
+<td><input id="margin" value="25"></td>
+</tr>
+
+</table>
+
+</div>
+
+<!-- RESULTS -->
+
+<div class="section">
+
+<div class="section-title">Financial Summary</div>
+
+<div class="summary">
+
+<div class="card">
+<div class="card-title">Total Hours</div>
+<div class="card-value" id="totalHours">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">Outsource Cost</div>
+<div class="card-value" id="outCost">$0</div>
+</div>
+
+<div class="card">
+<div class="card-title">Internal Cost</div>
+<div class="card-value" id="internalCost">$0</div>
+</div>
+
+<div class="card">
+<div class="card-title">Recommended Fee</div>
+<div class="card-value" id="fee">$0</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let scopeData = JSON.parse(localStorage.getItem("scopeData")||"[]")
+
+function save(){
+localStorage.setItem("scopeData",JSON.stringify(scopeData))
+}
+
+function render(){
+
+const tbody=document.querySelector("#scopeTable tbody")
+tbody.innerHTML=""
+
+scopeData.forEach((row,i)=>{
+
+let tr=document.createElement("tr")
+
+tr.innerHTML=`
+
+<td><input value="${row.item}" onchange="updateItem(${i},this.value)"></td>
+
+<td><input value="${row.desc}" onchange="updateDesc(${i},this.value)"></td>
+
+<td><input type="number" value="${row.hours}" onchange="updateHours(${i},this.value)"></td>
+
+<td><button class="delete" onclick="deleteRow(${i})">X</button></td>
+
+`
+
+tbody.appendChild(tr)
+
+})
+
+calculate()
+
+}
+
+function addScope(){
+
+scopeData.push({
+item:"",
+desc:"",
+hours:0
+})
+
+save()
+render()
+
+}
+
+function deleteRow(i){
+scopeData.splice(i,1)
+save()
+render()
+}
+
+function updateItem(i,v){
+scopeData[i].item=v
+save()
+}
+
+function updateDesc(i,v){
+scopeData[i].desc=v
+save()
+}
+
+function updateHours(i,v){
+scopeData[i].hours=parseFloat(v)||0
+save()
+calculate()
+}
+
+function calculate(){
+
+let totalHours=0
+
+scopeData.forEach(r=>{
+totalHours+=r.hours
+})
+
+let outRate=parseFloat(document.getElementById("outRate").value)||0
+let founderRate=parseFloat(document.getElementById("founderRate").value)||0
+
+let buffer=parseFloat(document.getElementById("buffer").value)||0
+let margin=parseFloat(document.getElementById("margin").value)||0
+
+let outsourceHours=totalHours*0.75
+let founderHours=totalHours*0.25
+
+let outsourceCost=outsourceHours*outRate
+let founderCost=founderHours*founderRate
+
+let internalCost=outsourceCost+founderCost
+
+let bufferCost=internalCost*(buffer/100)
+
+let baseCost=internalCost+bufferCost
+
+let fee=baseCost*(1+margin/100)
+
+document.getElementById("totalHours").innerText=Math.round(totalHours)
+
+document.getElementById("outCost").innerText="$"+Math.round(outsourceCost)
+
+document.getElementById("internalCost").innerText="$"+Math.round(baseCost)
+
+document.getElementById("fee").innerText="$"+Math.round(fee)
+
+}
+
+document.querySelectorAll("input").forEach(i=>{
+i.addEventListener("input",calculate)
+})
+
+render()
+
+</script>
+
+</body>
+</html>
