@@ -139,7 +139,7 @@ color:#777;
 
 </div>
 
-<!-- CLIENTS -->
+<!-- CLIENT -->
 
 <div id="clients" class="section">
 
@@ -159,7 +159,7 @@ color:#777;
 
 </div>
 
-<!-- PROJECTS -->
+<!-- PROJECT -->
 
 <div id="projects" class="section">
 
@@ -181,7 +181,7 @@ color:#777;
 
 </div>
 
-<!-- FREELANCERS -->
+<!-- FREELANCER -->
 
 <div id="freelancers" class="section">
 
@@ -225,36 +225,38 @@ color:#777;
 
 </div>
 
-<!-- DATA MASTER LIST -->
+<!-- DATA TAB -->
 
 <div id="data" class="section">
 
 <h3>Companies</h3>
-<button onclick="addData('companies')">Add</button>
+<button onclick="addMaster('companies')">Add</button>
 <table>
-<thead><tr><th>Name</th><th></th></tr></thead>
 <tbody id="companies"></tbody>
 </table>
 
 <h3>Clients</h3>
-<button onclick="addData('clientsList')">Add</button>
+<button onclick="addMaster('clientsList')">Add</button>
 <table>
-<thead><tr><th>Name</th><th></th></tr></thead>
 <tbody id="clientsList"></tbody>
 </table>
 
 <h3>Projects</h3>
-<button onclick="addData('projectsList')">Add</button>
+<button onclick="addMaster('projectsList')">Add</button>
 <table>
-<thead><tr><th>Name</th><th></th></tr></thead>
 <tbody id="projectsList"></tbody>
 </table>
 
 <h3>Countries</h3>
-<button onclick="addData('countries')">Add</button>
+<button onclick="addMaster('countries')">Add</button>
 <table>
-<thead><tr><th>Name</th><th></th></tr></thead>
 <tbody id="countries"></tbody>
+</table>
+
+<h3>Roles</h3>
+<button onclick="addMaster('roles')">Add</button>
+<table>
+<tbody id="roles"></tbody>
 </table>
 
 </div>
@@ -265,7 +267,7 @@ Data stored locally. Export backup regularly.
 
 <script>
 
-const STORAGE="ops_dashboard_v2"
+const STORAGE="ops_dashboard_v3"
 
 let currentTab="pipeline"
 
@@ -273,7 +275,8 @@ let masterData={
 companies:[],
 clientsList:[],
 projectsList:[],
-countries:[]
+countries:[],
+roles:[]
 }
 
 const stages=["Lead Identified","Contacted","Responded","Discovery","Proposal Sent","Negotiation","Won","Lost"]
@@ -313,7 +316,7 @@ opt.text=o
 select.appendChild(opt)
 })
 
-select.value=value||options[0]
+if(value) select.value=value
 
 select.onchange=saveData
 
@@ -321,7 +324,7 @@ return select
 
 }
 
-function createText(value){
+function createInput(value){
 
 let input=document.createElement("input")
 
@@ -369,6 +372,8 @@ else if(name==="Project") field=createDropdown(masterData.projectsList,data[i])
 
 else if(name==="Country") field=createDropdown(masterData.countries,data[i])
 
+else if(name==="Role") field=createDropdown(masterData.roles,data[i])
+
 else if(name==="Stage" && currentTab==="pipeline") field=createDropdown(stages,data[i])
 
 else if(name==="Stage" && currentTab==="projects") field=createDropdown(projectStages,data[i])
@@ -383,7 +388,7 @@ else if(name==="Rating") field=createDropdown(rating,data[i])
 
 else if(name==="Deadline" || name==="Date" || name==="Follow Up") field=createDate(data[i])
 
-else field=createText(data[i])
+else field=createInput(data[i])
 
 let td=document.createElement("td")
 
@@ -419,7 +424,7 @@ saveData()
 
 }
 
-function addData(type){
+function addMaster(type){
 
 let val=prompt("Enter value")
 
@@ -430,6 +435,8 @@ masterData[type].push(val)
 renderData()
 
 saveData()
+
+refreshDropdowns()
 
 }
 
@@ -447,9 +454,7 @@ masterData[key].forEach((v,i)=>{
 
 let row=document.createElement("tr")
 
-let td=document.createElement("td")
-
-let input=createText(v)
+let input=createInput(v)
 
 input.oninput=function(){
 
@@ -457,7 +462,11 @@ masterData[key][i]=this.value
 
 saveData()
 
+refreshDropdowns()
+
 }
+
+let td=document.createElement("td")
 
 td.appendChild(input)
 
@@ -477,6 +486,8 @@ renderData()
 
 saveData()
 
+refreshDropdowns()
+
 }
 
 let td2=document.createElement("td")
@@ -493,9 +504,46 @@ table.appendChild(row)
 
 }
 
+function refreshDropdowns(){
+
+document.querySelectorAll("select").forEach(sel=>{
+
+let current=sel.value
+
+let options=[...sel.options].map(o=>o.value)
+
+let source
+
+if(options.includes("Lead Identified")) source=stages
+else if(options.includes("Planning")) source=projectStages
+else if(options.includes("Available")) source=availability
+else if(options.includes("Pending")) source=paymentStatus
+else if(options.includes("1")) source=rating
+else if(options.some(v=>masterData.companies.includes(v))) source=masterData.companies
+else if(options.some(v=>masterData.clientsList.includes(v))) source=masterData.clientsList
+else if(options.some(v=>masterData.projectsList.includes(v))) source=masterData.projectsList
+else if(options.some(v=>masterData.countries.includes(v))) source=masterData.countries
+else if(options.some(v=>masterData.roles.includes(v))) source=masterData.roles
+else return
+
+sel.innerHTML=""
+
+source.forEach(v=>{
+let opt=document.createElement("option")
+opt.value=v
+opt.text=v
+sel.appendChild(opt)
+})
+
+sel.value=current
+
+})
+
+}
+
 function saveData(){
 
-let db={masterData:masterData}
+let db={masterData}
 
 document.querySelectorAll(".section").forEach(section=>{
 
