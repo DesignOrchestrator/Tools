@@ -56,13 +56,13 @@ font-weight:600;
 color:#555;
 }
 
-.field textarea{
+.field textarea,
+.field select,
+.field input{
 border:1px solid #d1d5db;
 border-radius:6px;
 padding:4px 6px;
 font-size:13px;
-resize:none;
-overflow:hidden;
 }
 
 /* TOOLBAR */
@@ -182,7 +182,11 @@ background:#bbf7d0;
 
 <div class="field">
 Project
-<textarea id="project"></textarea>
+<select id="project"></select>
+<div style="margin-top:4px;">
+<button onclick="addProject()">Add</button>
+<button onclick="renameProject()">Modify</button>
+</div>
 </div>
 
 <div class="field">
@@ -197,7 +201,7 @@ Founder
 
 <div class="field">
 Date
-<textarea id="date"></textarea>
+<input type="date" id="date">
 </div>
 
 <div class="field">
@@ -284,13 +288,72 @@ Version
 <script>
 
 const fields=[
-"project","company","founder","date","version",
+"company","founder","date","version",
 "kp_desc","kp","ka_desc","ka","kr_desc","kr",
 "vp_desc","vp","cr_desc","cr","ch_desc","ch",
 "cs_desc","cs","cost_desc","cost","rev_desc","rev"
 ]
 
-/* AUTO RESIZE TEXTAREA */
+/* PROJECT MANAGEMENT */
+
+function loadProjects(){
+
+let projects=JSON.parse(localStorage.getItem("projects"))||["Unassigned"]
+
+let select=document.getElementById("project")
+select.innerHTML=""
+
+projects.forEach(p=>{
+let opt=document.createElement("option")
+opt.value=p
+opt.textContent=p
+select.appendChild(opt)
+})
+
+}
+
+function saveProjects(list){
+localStorage.setItem("projects",JSON.stringify(list))
+}
+
+function addProject(){
+
+let name=prompt("New project name")
+if(!name) return
+
+let projects=JSON.parse(localStorage.getItem("projects"))||["Unassigned"]
+
+projects.push(name)
+
+saveProjects(projects)
+
+loadProjects()
+
+}
+
+function renameProject(){
+
+let select=document.getElementById("project")
+
+let current=select.value
+
+let name=prompt("Modify project name",current)
+
+if(!name) return
+
+let projects=JSON.parse(localStorage.getItem("projects"))||[]
+
+let index=projects.indexOf(current)
+
+projects[index]=name
+
+saveProjects(projects)
+
+loadProjects()
+
+}
+
+/* AUTO RESIZE */
 
 function autoResize(el){
 el.style.height="auto"
@@ -304,18 +367,32 @@ autoResize(e.target)
 })
 
 function saveData(){
+
+let project=document.getElementById("project").value||"Unassigned"
+
+localStorage.setItem("project",project)
+
 fields.forEach(id=>{
 localStorage.setItem(id,document.getElementById(id).value)
 })
+
 alert("Saved")
+
 }
 
 function loadData(){
+
+loadProjects()
+
+document.getElementById("project").value=
+localStorage.getItem("project")||"Unassigned"
+
 fields.forEach(id=>{
 let el=document.getElementById(id)
 el.value=localStorage.getItem(id)||""
 autoResize(el)
 })
+
 }
 
 function clearData(){
@@ -328,6 +405,9 @@ location.reload()
 function exportBackup(){
 
 let data={}
+
+data.project=document.getElementById("project").value
+
 fields.forEach(id=>{
 data[id]=document.getElementById(id).value
 })
@@ -355,6 +435,11 @@ let reader=new FileReader()
 reader.onload=function(e){
 
 let data=JSON.parse(e.target.result)
+
+if(data.project){
+document.getElementById("project").value=data.project
+localStorage.setItem("project",data.project)
+}
 
 fields.forEach(id=>{
 let el=document.getElementById(id)
