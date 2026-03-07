@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 
@@ -16,7 +17,7 @@ margin:0;
 }
 
 header{
-background:#1a73e8;
+background:#2c6fd6;
 color:white;
 padding:14px 20px;
 font-size:22px;
@@ -24,7 +25,7 @@ font-weight:bold;
 }
 
 .container{
-max-width:1300px;
+max-width:1200px;
 margin:auto;
 padding:20px;
 }
@@ -33,30 +34,28 @@ padding:20px;
 display:flex;
 gap:10px;
 margin-bottom:15px;
-flex-wrap:wrap;
 }
 
 .tab{
-background:white;
+background:#e7ebf3;
 padding:8px 14px;
 border-radius:6px;
 cursor:pointer;
-box-shadow:0 1px 3px rgba(0,0,0,0.1);
 font-size:14px;
 }
 
 .tab.active{
-background:#1a73e8;
+background:#2c6fd6;
 color:white;
 }
 
 .section{
 background:white;
-padding:18px;
+padding:20px;
 border-radius:10px;
 margin-bottom:20px;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
 display:none;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
 .section.active{
@@ -69,7 +68,7 @@ border-collapse:collapse;
 }
 
 th{
-background:#1a73e8;
+background:#2c6fd6;
 color:white;
 padding:8px;
 font-size:13px;
@@ -88,10 +87,10 @@ border-radius:4px;
 }
 
 button{
-padding:6px 10px;
-background:#1a73e8;
+background:#2c6fd6;
 color:white;
 border:none;
+padding:6px 10px;
 border-radius:4px;
 cursor:pointer;
 }
@@ -101,29 +100,31 @@ background:#e74c3c;
 }
 
 .cards{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-gap:10px;
-margin-top:15px;
+display:flex;
+gap:20px;
+margin-top:20px;
 }
 
 .card{
-background:#f7f8fd;
-padding:12px;
+background:#f4f6fb;
+padding:15px;
 border-radius:8px;
+width:200px;
 text-align:center;
 }
 
 .value{
-font-size:20px;
+font-size:22px;
 font-weight:bold;
 }
 
 .chartBox{
 height:220px;
+margin-top:20px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -133,12 +134,14 @@ height:220px;
 <div class="container">
 
 <div class="tabs">
-<div class="tab active" onclick="openTab('setup')">Project Setup</div>
-<div class="tab" onclick="openTab('scope')">Scope Builder</div>
-<div class="tab" onclick="openTab('estimate')">Estimator</div>
-<div class="tab" onclick="openTab('finance')">Financials</div>
-<div class="tab" onclick="openTab('proposal')">Proposal</div>
-<div class="tab" onclick="openTab('analytics')">Analytics</div>
+
+<div class="tab active" onclick="openTab('setup',this)">Project Setup</div>
+<div class="tab" onclick="openTab('scope',this)">Scope Builder</div>
+<div class="tab" onclick="openTab('estimate',this)">Estimator</div>
+<div class="tab" onclick="openTab('finance',this)">Financials</div>
+<div class="tab" onclick="openTab('proposal',this)">Proposal</div>
+<div class="tab" onclick="openTab('analytics',this)">Analytics</div>
+
 </div>
 
 <!-- PROJECT SETUP -->
@@ -167,7 +170,6 @@ height:220px;
 <option>Indonesia</option>
 <option>Vietnam</option>
 <option>Australia</option>
-<option>Other</option>
 </select>
 </td>
 
@@ -316,12 +318,12 @@ Recommended Fee
 <h3>Proposal Generator</h3>
 
 <label>Scope Description</label>
+
 <textarea id="scopeText" style="height:120px"></textarea>
 
 <br><br>
 
-<button onclick="generateProposal()">Generate</button>
-<button onclick="window.print()">Export PDF</button>
+<button onclick="generateProposal()">Generate</button> <button onclick="window.print()">Export PDF</button>
 
 <div id="proposalOutput"></div>
 
@@ -331,7 +333,7 @@ Recommended Fee
 
 <div id="analytics" class="section">
 
-<h3>Insights</h3>
+<h3>Cost Breakdown</h3>
 
 <div class="chartBox">
 <canvas id="costChart"></canvas>
@@ -339,15 +341,13 @@ Recommended Fee
 
 </div>
 
-<br>
+<!-- DATA TOOLS -->
 
 <div class="section active">
 
 <h3>Data Tools</h3>
 
-<button onclick="exportData()">Export Backup</button>
-<button onclick="importData()">Import Backup</button>
-<button class="danger" onclick="clearAll()">Clear All</button>
+<button onclick="exportData()">Export Backup</button> <button onclick="importData()">Import Backup</button> <button class="danger" onclick="clearAll()">Clear All</button>
 
 <input type="file" id="fileInput" style="display:none">
 
@@ -357,28 +357,25 @@ Recommended Fee
 
 <script>
 
-let db=JSON.parse(localStorage.getItem("sp_tool")||`{
-scope:[]
-}`)
+let db=JSON.parse(localStorage.getItem("sp_tool")||`{scope:[]}`)
 
 function save(){
 localStorage.setItem("sp_tool",JSON.stringify(db))
 }
 
-function openTab(id){
+function openTab(id,el){
 
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
 document.getElementById(id).classList.add("active")
 
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-event.target.classList.add("active")
+el.classList.add("active")
 
 }
 
 function addScope(){
 
 db.scope.push({task:"",desc:"",hours:0})
-
 save()
 renderScope()
 
@@ -387,14 +384,13 @@ renderScope()
 function renderScope(){
 
 let body=document.querySelector("#scopeTable tbody")
-
 body.innerHTML=""
 
 db.scope.forEach((r,i)=>{
 
-body.innerHTML+=`
+let row=document.createElement("tr")
 
-<tr>
+row.innerHTML=`
 
 <td><input value="${r.task}" onchange="db.scope[${i}].task=this.value;save()"></td>
 
@@ -402,13 +398,21 @@ body.innerHTML+=`
 
 <td><input type="number" value="${r.hours}" onchange="db.scope[${i}].hours=this.value;save()"></td>
 
-<td><button onclick="db.scope.splice(${i},1);save();renderScope()">X</button></td>
-
-</tr>
+<td><button onclick="deleteScope(${i})">X</button></td>
 
 `
 
+body.appendChild(row)
+
 })
+
+}
+
+function deleteScope(i){
+
+db.scope.splice(i,1)
+save()
+renderScope()
 
 }
 
@@ -462,7 +466,10 @@ type:"doughnut",
 
 data:{
 labels:["Outsource","Founder"],
-datasets:[{data:[out,founder]}]
+datasets:[{
+data:[out,founder],
+backgroundColor:["#4285f4","#34a853"]
+}]
 }
 
 })
@@ -480,14 +487,15 @@ document.getElementById("proposalOutput").innerHTML=`
 
 <h2>Project Proposal</h2>
 
-Client: ${client}<br>
-Project: ${project}<br>
+<p><b>Client:</b> ${client}</p>
+
+<p><b>Project:</b> ${project}</p>
 
 <h3>Scope</h3>
-${scope}
+<p>${scope}</p>
 
 <h3>Professional Fee</h3>
-$${fee}
+<p>$${fee}</p>
 
 `
 
@@ -541,4 +549,5 @@ renderScope()
 </script>
 
 </body>
+
 </html>
