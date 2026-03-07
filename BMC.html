@@ -16,7 +16,6 @@ color:#1f2937;
 }
 
 .container{max-width:1800px;margin:auto;}
-
 h1{text-align:center;margin-bottom:10px;font-size:28px;}
 
 .banner{
@@ -189,21 +188,17 @@ Version
 <div class="canvas">
 
 <div class="block kp"><h3>Key Partners</h3><textarea class="desc" id="kp_desc"></textarea><textarea class="notes" id="kp"></textarea></div>
-
 <div class="block ka"><h3>Key Activities</h3><textarea class="desc" id="ka_desc"></textarea><textarea class="notes" id="ka"></textarea></div>
-
 <div class="block kr"><h3>Key Resources</h3><textarea class="desc" id="kr_desc"></textarea><textarea class="notes" id="kr"></textarea></div>
 
 <div class="block vp"><h3>Value Proposition</h3><textarea class="desc" id="vp_desc"></textarea><textarea class="notes" id="vp"></textarea></div>
 
 <div class="block cr"><h3>Customer Relationships</h3><textarea class="desc" id="cr_desc"></textarea><textarea class="notes" id="cr"></textarea></div>
-
 <div class="block ch"><h3>Channels</h3><textarea class="desc" id="ch_desc"></textarea><textarea class="notes" id="ch"></textarea></div>
 
 <div class="block cs"><h3>Customer Segments</h3><textarea class="desc" id="cs_desc"></textarea><textarea class="notes" id="cs"></textarea></div>
 
 <div class="block cost"><h3>Cost Structure</h3><textarea class="desc" id="cost_desc"></textarea><textarea class="notes" id="cost"></textarea></div>
-
 <div class="block rev"><h3>Revenue Streams</h3><textarea class="desc" id="rev_desc"></textarea><textarea class="notes" id="rev"></textarea></div>
 
 </div>
@@ -219,9 +214,40 @@ const fields=[
 "cs_desc","cs","cost_desc","cost","rev_desc","rev"
 ]
 
-let canvases=JSON.parse(localStorage.getItem("canvases")) || {"Unassigned":{}}
-
+let canvases=JSON.parse(localStorage.getItem("canvases")) || {}
 let currentCanvas="Unassigned"
+
+/* ---------- MIGRATE OLD DATA ---------- */
+
+function migrateOldData(){
+
+if(localStorage.getItem("migration_done")) return
+
+let oldData={}
+let found=false
+
+fields.forEach(id=>{
+let v=localStorage.getItem(id)
+if(v){
+oldData[id]=v
+found=true
+}
+})
+
+if(found){
+
+if(!canvases["Unassigned"]){
+canvases["Unassigned"]={}
+}
+
+Object.assign(canvases["Unassigned"],oldData)
+
+localStorage.setItem("canvases",JSON.stringify(canvases))
+}
+
+localStorage.setItem("migration_done","true")
+
+}
 
 /* ---------- Canvas Management ---------- */
 
@@ -238,6 +264,7 @@ select.appendChild(opt)
 })
 
 select.value=currentCanvas
+
 }
 
 function loadCanvas(){
@@ -253,15 +280,17 @@ document.getElementById(id).value=data[id]||""
 function addCanvas(){
 
 let name=prompt("Canvas name")
-
 if(!name) return
 
-canvases[name]={}
+if(canvases[name]){
+alert("Canvas already exists")
+return
+}
 
+canvases[name]={}
 currentCanvas=name
 
 saveStorage()
-
 refresh()
 
 }
@@ -269,17 +298,14 @@ refresh()
 function renameCanvas(){
 
 let name=prompt("New name",currentCanvas)
-
 if(!name) return
 
 canvases[name]=canvases[currentCanvas]
-
 delete canvases[currentCanvas]
 
 currentCanvas=name
 
 saveStorage()
-
 refresh()
 
 }
@@ -289,11 +315,9 @@ function deleteCanvas(){
 if(!confirm("Delete this canvas?")) return
 
 delete canvases[currentCanvas]
-
 currentCanvas="Unassigned"
 
 saveStorage()
-
 refresh()
 
 }
@@ -301,12 +325,11 @@ refresh()
 document.getElementById("canvasSelect").addEventListener("change",function(){
 
 currentCanvas=this.value
-
 loadCanvas()
 
 })
 
-/* ---------- Data ---------- */
+/* ---------- Save ---------- */
 
 function saveData(){
 
@@ -338,40 +361,6 @@ localStorage.setItem("canvases",JSON.stringify(canvases))
 
 }
 
-/* ---------- Import Canvas ---------- */
-
-function importCanvas(){
-
-document.getElementById("fileInput").click()
-
-}
-
-document.getElementById("fileInput").addEventListener("change",function(){
-
-let file=this.files[0]
-
-let reader=new FileReader()
-
-reader.onload=function(e){
-
-let data=JSON.parse(e.target.result)
-
-let name=data.canvasName || "Imported Canvas"
-
-canvases[name]=data.data
-
-currentCanvas=name
-
-saveStorage()
-
-refresh()
-
-}
-
-reader.readAsText(file)
-
-})
-
 /* ---------- Export Canvas ---------- */
 
 function exportCanvas(){
@@ -384,14 +373,41 @@ data:canvases[currentCanvas]
 let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
 
 let link=document.createElement("a")
-
 link.href=URL.createObjectURL(blob)
-
 link.download=currentCanvas+"_canvas.json"
-
 link.click()
 
 }
+
+/* ---------- Import Canvas ---------- */
+
+function importCanvas(){
+document.getElementById("fileInput").click()
+}
+
+document.getElementById("fileInput").addEventListener("change",function(){
+
+let file=this.files[0]
+let reader=new FileReader()
+
+reader.onload=function(e){
+
+let data=JSON.parse(e.target.result)
+
+let name=data.canvasName || "Imported"
+
+canvases[name]=data.data
+
+currentCanvas=name
+
+saveStorage()
+refresh()
+
+}
+
+reader.readAsText(file)
+
+})
 
 /* ---------- Backup ---------- */
 
@@ -400,19 +416,14 @@ function exportBackup(){
 let blob=new Blob([JSON.stringify(canvases,null,2)],{type:"application/json"})
 
 let link=document.createElement("a")
-
 link.href=URL.createObjectURL(blob)
-
-link.download="bmc_full_backup.json"
-
+link.download="bmc_backup.json"
 link.click()
 
 }
 
 function importBackup(){
-
 document.getElementById("fileInput").click()
-
 }
 
 /* ---------- Init ---------- */
@@ -420,11 +431,11 @@ document.getElementById("fileInput").click()
 function refresh(){
 
 loadCanvasList()
-
 loadCanvas()
 
 }
 
+migrateOldData()
 refresh()
 
 </script>
