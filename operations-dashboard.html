@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>Operations Dashboard</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
 body{
@@ -52,6 +54,7 @@ table{
 width:100%;
 border-collapse:collapse;
 background:white;
+margin-top:10px;
 }
 
 th,td{
@@ -87,6 +90,23 @@ border-radius:3px;
 cursor:pointer;
 }
 
+.chartBox{
+width:320px;
+height:220px;
+background:white;
+padding:10px;
+border-radius:6px;
+box-shadow:0 0 5px rgba(0,0,0,0.1);
+margin-bottom:10px;
+}
+
+.chartRow{
+display:flex;
+gap:20px;
+flex-wrap:wrap;
+margin-bottom:10px;
+}
+
 .footer{
 margin-top:10px;
 font-size:12px;
@@ -120,6 +140,10 @@ color:#777;
 <!-- PIPELINE -->
 
 <div id="pipeline" class="section active">
+
+<div class="chartRow">
+<div class="chartBox"><canvas id="pipelineChart"></canvas></div>
+</div>
 
 <table>
 <thead>
@@ -162,6 +186,10 @@ color:#777;
 <!-- PROJECT -->
 
 <div id="projects" class="section">
+
+<div class="chartRow">
+<div class="chartBox"><canvas id="projectChart"></canvas></div>
+</div>
 
 <table>
 <thead>
@@ -207,6 +235,10 @@ color:#777;
 
 <div id="revenue" class="section">
 
+<div class="chartRow">
+<div class="chartBox"><canvas id="revenueChart"></canvas></div>
+</div>
+
 <table>
 <thead>
 <tr>
@@ -225,39 +257,29 @@ color:#777;
 
 </div>
 
-<!-- DATA TAB -->
+<!-- DATA -->
 
 <div id="data" class="section">
 
 <h3>Companies</h3>
 <button onclick="addMaster('companies')">Add</button>
-<table>
-<tbody id="companies"></tbody>
-</table>
+<table><tbody id="companies"></tbody></table>
 
 <h3>Clients</h3>
 <button onclick="addMaster('clientsList')">Add</button>
-<table>
-<tbody id="clientsList"></tbody>
-</table>
+<table><tbody id="clientsList"></tbody></table>
 
 <h3>Projects</h3>
 <button onclick="addMaster('projectsList')">Add</button>
-<table>
-<tbody id="projectsList"></tbody>
-</table>
+<table><tbody id="projectsList"></tbody></table>
 
 <h3>Countries</h3>
 <button onclick="addMaster('countries')">Add</button>
-<table>
-<tbody id="countries"></tbody>
-</table>
+<table><tbody id="countries"></tbody></table>
 
 <h3>Roles</h3>
 <button onclick="addMaster('roles')">Add</button>
-<table>
-<tbody id="roles"></tbody>
-</table>
+<table><tbody id="roles"></tbody></table>
 
 </div>
 
@@ -267,7 +289,7 @@ Data stored locally. Export backup regularly.
 
 <script>
 
-const STORAGE="ops_dashboard_v3"
+const STORAGE="ops_dashboard_v5"
 
 let currentTab="pipeline"
 
@@ -283,7 +305,11 @@ const stages=["Lead Identified","Contacted","Responded","Discovery","Proposal Se
 
 const projectStages=["Planning","Kickoff","Production","Coordination","Review","Delivery","Completed"]
 
-const statusList=["Active","Inactive","Completed","Potential"]
+const projectTypes=["Residential","Commercial","Mixed Use","Industrial","Other"]
+
+const projectStatus=["Planning","In Progress","On Hold","Completed"]
+
+const clientStatus=["Active","Inactive","Completed","Potential"]
 
 const availability=["Available","Busy","Unavailable"]
 
@@ -291,62 +317,64 @@ const rating=["1","2","3","4","5"]
 
 const paymentStatus=["Pending","Partial","Paid","Overdue"]
 
+let pipelineChart,projectChart,revenueChart
+
 function switchTab(tab){
 
 currentTab=tab
 
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
-
 document.getElementById(tab).classList.add("active")
 
 document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"))
-
 event.target.classList.add("active")
+
+updateCharts()
 
 }
 
-function createDropdown(options,value){
+function dropdown(list,value){
 
 let select=document.createElement("select")
 
-options.forEach(o=>{
-let opt=document.createElement("option")
-opt.value=o
-opt.text=o
-select.appendChild(opt)
+list.forEach(v=>{
+let o=document.createElement("option")
+o.value=v
+o.text=v
+select.appendChild(o)
 })
 
 if(value) select.value=value
 
-select.onchange=saveData
+select.onchange=function(){
+saveData()
+updateCharts()
+}
 
 return select
 
 }
 
-function createInput(value){
+function textInput(v){
 
-let input=document.createElement("input")
+let i=document.createElement("input")
+i.value=v||""
 
-input.value=value||""
+i.oninput=saveData
 
-input.oninput=saveData
-
-return input
+return i
 
 }
 
-function createDate(value){
+function dateInput(v){
 
-let input=document.createElement("input")
+let i=document.createElement("input")
+i.type="date"
+i.value=v||""
 
-input.type="date"
+i.onchange=saveData
 
-input.value=value||""
-
-input.onchange=saveData
-
-return input
+return i
 
 }
 
@@ -364,63 +392,131 @@ let name=headers[i].innerText
 
 let field
 
-if(name==="Company") field=createDropdown(masterData.companies,data[i])
-
-else if(name==="Client") field=createDropdown(masterData.clientsList,data[i])
-
-else if(name==="Project") field=createDropdown(masterData.projectsList,data[i])
-
-else if(name==="Country") field=createDropdown(masterData.countries,data[i])
-
-else if(name==="Role") field=createDropdown(masterData.roles,data[i])
-
-else if(name==="Stage" && currentTab==="pipeline") field=createDropdown(stages,data[i])
-
-else if(name==="Stage" && currentTab==="projects") field=createDropdown(projectStages,data[i])
-
-else if(name==="Status" && currentTab==="clients") field=createDropdown(statusList,data[i])
-
-else if(name==="Status" && currentTab==="revenue") field=createDropdown(paymentStatus,data[i])
-
-else if(name==="Availability") field=createDropdown(availability,data[i])
-
-else if(name==="Rating") field=createDropdown(rating,data[i])
-
-else if(name==="Deadline" || name==="Date" || name==="Follow Up") field=createDate(data[i])
-
-else field=createInput(data[i])
+if(name==="Company") field=dropdown(masterData.companies,data[i])
+else if(name==="Client") field=dropdown(masterData.clientsList,data[i])
+else if(name==="Project") field=dropdown(masterData.projectsList,data[i])
+else if(name==="Country") field=dropdown(masterData.countries,data[i])
+else if(name==="Role") field=dropdown(masterData.roles,data[i])
+else if(name==="Stage" && currentTab==="pipeline") field=dropdown(stages,data[i])
+else if(name==="Stage" && currentTab==="projects") field=dropdown(projectStages,data[i])
+else if(name==="Type") field=dropdown(projectTypes,data[i])
+else if(name==="Status" && currentTab==="projects") field=dropdown(projectStatus,data[i])
+else if(name==="Status" && currentTab==="clients") field=dropdown(clientStatus,data[i])
+else if(name==="Status" && currentTab==="revenue") field=dropdown(paymentStatus,data[i])
+else if(name==="Availability") field=dropdown(availability,data[i])
+else if(name==="Rating") field=dropdown(rating,data[i])
+else if(name==="Date" || name==="Deadline" || name==="Follow Up") field=dateInput(data[i])
+else field=textInput(data[i])
 
 let td=document.createElement("td")
-
 td.appendChild(field)
-
 row.appendChild(td)
 
 }
 
 let del=document.createElement("button")
-
 del.innerText="X"
-
 del.className="delete-btn"
-
 del.onclick=function(){
-
 row.remove()
-
 saveData()
-
+updateCharts()
 }
 
 let td=document.createElement("td")
-
 td.appendChild(del)
-
 row.appendChild(td)
 
 table.appendChild(row)
 
 saveData()
+updateCharts()
+
+}
+
+function updateCharts(){
+
+updatePipelineChart()
+updateProjectChart()
+updateRevenueChart()
+
+}
+
+function getColumnData(section,colIndex){
+
+let rows=document.querySelectorAll("#"+section+" tbody tr")
+
+let arr=[]
+
+rows.forEach(r=>{
+let cells=r.querySelectorAll("input,select")
+if(cells[colIndex]) arr.push(cells[colIndex].value)
+})
+
+return arr
+
+}
+
+function countValues(arr){
+
+let map={}
+
+arr.forEach(v=>{
+map[v]=(map[v]||0)+1
+})
+
+return map
+
+}
+
+function updatePipelineChart(){
+
+let data=countValues(getColumnData("pipeline",3))
+
+let labels=Object.keys(data)
+let values=Object.values(data)
+
+if(pipelineChart) pipelineChart.destroy()
+
+pipelineChart=new Chart(document.getElementById("pipelineChart"),{
+type:"pie",
+data:{labels:labels,datasets:[{data:values}]},
+options:{plugins:{legend:{position:"bottom"}}}
+})
+
+}
+
+function updateProjectChart(){
+
+let data=countValues(getColumnData("projects",5))
+
+let labels=Object.keys(data)
+let values=Object.values(data)
+
+if(projectChart) projectChart.destroy()
+
+projectChart=new Chart(document.getElementById("projectChart"),{
+type:"doughnut",
+data:{labels:labels,datasets:[{data:values}]},
+options:{plugins:{legend:{position:"bottom"}}}
+})
+
+}
+
+function updateRevenueChart(){
+
+let data=countValues(getColumnData("revenue",6))
+
+let labels=Object.keys(data)
+let values=Object.values(data)
+
+if(revenueChart) revenueChart.destroy()
+
+revenueChart=new Chart(document.getElementById("revenueChart"),{
+type:"pie",
+data:{labels:labels,datasets:[{data:values}]},
+options:{plugins:{legend:{position:"bottom"}}}
+})
 
 }
 
@@ -436,8 +532,6 @@ renderData()
 
 saveData()
 
-refreshDropdowns()
-
 }
 
 function renderData(){
@@ -445,7 +539,6 @@ function renderData(){
 for(let key in masterData){
 
 let table=document.getElementById(key)
-
 if(!table) continue
 
 table.innerHTML=""
@@ -454,46 +547,29 @@ masterData[key].forEach((v,i)=>{
 
 let row=document.createElement("tr")
 
-let input=createInput(v)
+let input=textInput(v)
 
 input.oninput=function(){
-
 masterData[key][i]=this.value
-
 saveData()
-
-refreshDropdowns()
-
 }
 
 let td=document.createElement("td")
-
 td.appendChild(input)
-
 row.appendChild(td)
 
 let del=document.createElement("button")
-
 del.innerText="X"
-
 del.className="delete-btn"
 
 del.onclick=function(){
-
 masterData[key].splice(i,1)
-
 renderData()
-
 saveData()
-
-refreshDropdowns()
-
 }
 
 let td2=document.createElement("td")
-
 td2.appendChild(del)
-
 row.appendChild(td2)
 
 table.appendChild(row)
@@ -504,43 +580,6 @@ table.appendChild(row)
 
 }
 
-function refreshDropdowns(){
-
-document.querySelectorAll("select").forEach(sel=>{
-
-let current=sel.value
-
-let options=[...sel.options].map(o=>o.value)
-
-let source
-
-if(options.includes("Lead Identified")) source=stages
-else if(options.includes("Planning")) source=projectStages
-else if(options.includes("Available")) source=availability
-else if(options.includes("Pending")) source=paymentStatus
-else if(options.includes("1")) source=rating
-else if(options.some(v=>masterData.companies.includes(v))) source=masterData.companies
-else if(options.some(v=>masterData.clientsList.includes(v))) source=masterData.clientsList
-else if(options.some(v=>masterData.projectsList.includes(v))) source=masterData.projectsList
-else if(options.some(v=>masterData.countries.includes(v))) source=masterData.countries
-else if(options.some(v=>masterData.roles.includes(v))) source=masterData.roles
-else return
-
-sel.innerHTML=""
-
-source.forEach(v=>{
-let opt=document.createElement("option")
-opt.value=v
-opt.text=v
-sel.appendChild(opt)
-})
-
-sel.value=current
-
-})
-
-}
-
 function saveData(){
 
 let db={masterData}
@@ -548,21 +587,15 @@ let db={masterData}
 document.querySelectorAll(".section").forEach(section=>{
 
 let name=section.id
-
 let rows=section.querySelectorAll("tbody tr")
 
 db[name]=[]
 
 rows.forEach(r=>{
-
 let cells=r.querySelectorAll("input,select")
-
 let row=[]
-
 cells.forEach(c=>row.push(c.value))
-
 db[name].push(row)
-
 })
 
 })
@@ -574,7 +607,6 @@ localStorage.setItem(STORAGE,JSON.stringify(db))
 function loadData(){
 
 let db=localStorage.getItem(STORAGE)
-
 if(!db) return
 
 db=JSON.parse(db)
@@ -588,12 +620,13 @@ for(let section in db){
 if(section==="masterData") continue
 
 currentTab=section
-
 db[section].forEach(r=>addRow(r))
 
 }
 
 currentTab="pipeline"
+
+updateCharts()
 
 }
 
@@ -604,11 +637,8 @@ let data=localStorage.getItem(STORAGE)||"{}"
 let blob=new Blob([data],{type:"application/json"})
 
 let a=document.createElement("a")
-
 a.href=URL.createObjectURL(blob)
-
 a.download="dashboard_backup.json"
-
 a.click()
 
 }
@@ -620,13 +650,11 @@ document.getElementById("fileInput").click()
 document.getElementById("fileInput").onchange=function(e){
 
 let file=e.target.files[0]
-
 let reader=new FileReader()
 
 reader.onload=function(evt){
 
 localStorage.setItem(STORAGE,evt.target.result)
-
 location.reload()
 
 }
@@ -642,7 +670,6 @@ function clearAll(){
 if(!confirm("Clear all data?")) return
 
 localStorage.removeItem(STORAGE)
-
 location.reload()
 
 }
