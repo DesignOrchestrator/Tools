@@ -57,7 +57,7 @@ border-radius:6px;
 /* CONTAINER */
 
 .container{
-max-width:1100px;
+max-width:1150px;
 margin:auto;
 padding:20px;
 }
@@ -114,6 +114,46 @@ border-bottom:1px solid #eee;
 font-size:13px;
 }
 
+/* WORKFLOW PANEL */
+
+.workflow-panel{
+background:#f3f6fb;
+border-left:2px solid #dbe2f0;
+}
+
+.workflow-panel select{
+width:100%;
+padding:4px;
+}
+
+.workflow-cell{
+background:#f8faff;
+border-left:2px solid #e0e7f5;
+padding:6px;
+}
+
+.workflow-cell-inner{
+display:flex;
+gap:6px;
+align-items:center;
+}
+
+.workflow-cell-inner select{
+flex:1;
+}
+
+.workflow-cell-inner button{
+background:#e55353;
+color:white;
+border:none;
+padding:3px 6px;
+border-radius:4px;
+cursor:pointer;
+font-size:11px;
+}
+
+/* INPUT */
+
 input{
 width:100%;
 border:none;
@@ -128,18 +168,7 @@ outline:none;
 
 .col-step{width:70px}
 .col-ref{width:220px}
-.col-delete{width:50px}
-.col-workflow{width:160px}
-
-.delete-btn{
-background:#e55353;
-color:white;
-border:none;
-padding:4px 6px;
-border-radius:4px;
-cursor:pointer;
-font-size:11px;
-}
+.col-workflow{width:180px}
 
 </style>
 </head>
@@ -180,8 +209,6 @@ const STORAGE_KEY="workflow_template_data"
 
 let data=[]
 let currentWorkflow="Unassigned"
-
-/* LOAD */
 
 function load(){
 
@@ -332,8 +359,7 @@ table.innerHTML=`
 <th class="col-step">Step</th>
 <th>Action</th>
 <th class="col-ref">Reference</th>
-<th class="col-workflow">Workflow</th>
-<th class="col-delete"></th>
+<th class="col-workflow workflow-panel">Workflow</th>
 </tr>
 </thead>
 
@@ -347,7 +373,7 @@ stageRows.forEach((row,rowIndex)=>{
 
 let index=data.indexOf(row)
 
-let step=`${stageIndex+1}.${rowIndex+1}`
+let step=\`\${stageIndex+1}.\${rowIndex+1}\`
 
 let tr=document.createElement("tr")
 
@@ -363,16 +389,20 @@ tr.innerHTML=`
 <input value="${row.ref||""}" onchange="update(${index},'ref',this.value)">
 </td>
 
-<td>
+<td class="workflow-cell">
+
+<div class="workflow-cell-inner">
+
 <select onchange="update(${index},'workflow',this.value)">
 ${getWorkflows().map(w=>`
 <option ${w=== (row.workflow||"Unassigned")?'selected':''}>${w}</option>
 `).join("")}
 </select>
-</td>
 
-<td>
-<button class="delete-btn" onclick="deleteRow(${index})">✕</button>
+<button onclick="deleteRow(${index})">✕</button>
+
+</div>
+
 </td>
 
 `
