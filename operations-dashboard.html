@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Operations Dashboard</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -20,13 +21,16 @@ background:white;
 z-index:1000;
 padding:10px 20px;
 box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+.headerTop{
 display:flex;
 justify-content:space-between;
 align-items:flex-start;
 }
 
-.leftHeader{
-max-width:70%;
+.titleArea{
+flex:1;
 }
 
 h1{
@@ -74,8 +78,8 @@ gap:10px;
 }
 
 .chartBox{
-width:160px;
-height:130px;
+width:180px;
+height:140px;
 background:#fafafa;
 border:1px solid #ddd;
 border-radius:6px;
@@ -142,7 +146,9 @@ color:#777;
 
 <div class="header">
 
-<div class="leftHeader">
+<div class="headerTop">
+
+<div class="titleArea">
 
 <h1>Operations Dashboard</h1>
 
@@ -166,16 +172,31 @@ color:#777;
 </div>
 
 <div class="chartArea">
-<div class="chartBox"><canvas id="pipelineChart"></canvas></div>
-<div class="chartBox"><canvas id="projectChart"></canvas></div>
-<div class="chartBox"><canvas id="revenueChart"></canvas></div>
+
+<div class="chartBox">
+<canvas id="pipelineChart"></canvas>
+</div>
+
+<div class="chartBox">
+<canvas id="projectChart"></canvas>
+</div>
+
+<div class="chartBox">
+<canvas id="revenueChart"></canvas>
+</div>
+
+</div>
+
 </div>
 
 </div>
 
 <div class="content">
 
+<!-- PIPELINE -->
+
 <div id="pipeline" class="section active">
+
 <table>
 <thead>
 <tr>
@@ -191,9 +212,13 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
+
 </div>
 
+<!-- CLIENT -->
+
 <div id="clients" class="section">
+
 <table>
 <thead>
 <tr>
@@ -207,9 +232,13 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
+
 </div>
 
+<!-- PROJECT -->
+
 <div id="projects" class="section">
+
 <table>
 <thead>
 <tr>
@@ -225,9 +254,13 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
+
 </div>
 
+<!-- FREELANCER -->
+
 <div id="freelancers" class="section">
+
 <table>
 <thead>
 <tr>
@@ -243,9 +276,13 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
+
 </div>
 
+<!-- REVENUE -->
+
 <div id="revenue" class="section">
+
 <table>
 <thead>
 <tr>
@@ -261,7 +298,10 @@ color:#777;
 </thead>
 <tbody></tbody>
 </table>
+
 </div>
+
+<!-- DATA -->
 
 <div id="data" class="section">
 
@@ -295,7 +335,7 @@ Data stored locally in browser. Export backup regularly.
 
 <script>
 
-const STORAGE="ops_dashboard_persistent"
+const STORAGE="ops_dashboard_v7"
 
 let currentTab="pipeline"
 
@@ -316,17 +356,55 @@ const availability=["Available","Busy","Unavailable"]
 const rating=["1","2","3","4","5"]
 const paymentStatus=["Pending","Partial","Paid","Overdue"]
 
+let pipelineChart,projectChart,revenueChart
+
+function switchTab(tab){
+
+currentTab=tab
+
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
+document.getElementById(tab).classList.add("active")
+
+document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"))
+event.target.classList.add("active")
+
+}
+
 function dropdown(list,value){
+
 let select=document.createElement("select")
+
 list.forEach(v=>{
-let opt=document.createElement("option")
-opt.value=v
-opt.text=v
-select.appendChild(opt)
+let o=document.createElement("option")
+o.value=v
+o.text=v
+select.appendChild(o)
 })
+
 if(value) select.value=value
-select.onchange=saveData
+
+select.onchange=function(){
+saveData()
+updateCharts()
+}
+
 return select
+
+}
+
+function textInput(v){
+let i=document.createElement("input")
+i.value=v||""
+i.oninput=saveData
+return i
+}
+
+function dateInput(v){
+let i=document.createElement("input")
+i.type="date"
+i.value=v||""
+i.onchange=saveData
+return i
 }
 
 function addRow(data=[]){
@@ -353,17 +431,8 @@ else if(name==="Status" && currentTab==="clients") field=dropdown(clientStatus,d
 else if(name==="Status" && currentTab==="revenue") field=dropdown(paymentStatus,data[i])
 else if(name==="Availability") field=dropdown(availability,data[i])
 else if(name==="Rating") field=dropdown(rating,data[i])
-else if(name==="Date" || name==="Deadline" || name==="Follow Up"){
-field=document.createElement("input")
-field.type="date"
-field.value=data[i]||""
-field.onchange=saveData
-}
-else{
-field=document.createElement("input")
-field.value=data[i]||""
-field.oninput=saveData
-}
+else if(name==="Date" || name==="Deadline" || name==="Follow Up") field=dateInput(data[i])
+else field=textInput(data[i])
 
 let td=document.createElement("td")
 td.appendChild(field)
@@ -378,6 +447,7 @@ del.className="delete-btn"
 del.onclick=function(){
 row.remove()
 saveData()
+updateCharts()
 }
 
 let td=document.createElement("td")
@@ -385,6 +455,139 @@ td.appendChild(del)
 row.appendChild(td)
 
 table.appendChild(row)
+
+saveData()
+updateCharts()
+
+}
+
+function updateCharts(){
+
+updatePipelineChart()
+updateProjectChart()
+updateRevenueChart()
+
+}
+
+function getColumnData(section,colIndex){
+
+let rows=document.querySelectorAll("#"+section+" tbody tr")
+let arr=[]
+
+rows.forEach(r=>{
+let cells=r.querySelectorAll("input,select")
+if(cells[colIndex]) arr.push(cells[colIndex].value)
+})
+
+return arr
+
+}
+
+function countValues(arr){
+
+let map={}
+arr.forEach(v=>{map[v]=(map[v]||0)+1})
+return map
+
+}
+
+function updatePipelineChart(){
+
+let data=countValues(getColumnData("pipeline",3))
+
+if(pipelineChart) pipelineChart.destroy()
+
+pipelineChart=new Chart(document.getElementById("pipelineChart"),{
+type:"pie",
+data:{labels:Object.keys(data),datasets:[{data:Object.values(data)}]},
+options:{plugins:{legend:{display:false}}}
+})
+
+}
+
+function updateProjectChart(){
+
+let data=countValues(getColumnData("projects",5))
+
+if(projectChart) projectChart.destroy()
+
+projectChart=new Chart(document.getElementById("projectChart"),{
+type:"doughnut",
+data:{labels:Object.keys(data),datasets:[{data:Object.values(data)}]},
+options:{plugins:{legend:{display:false}}}
+})
+
+}
+
+function updateRevenueChart(){
+
+let data=countValues(getColumnData("revenue",6))
+
+if(revenueChart) revenueChart.destroy()
+
+revenueChart=new Chart(document.getElementById("revenueChart"),{
+type:"pie",
+data:{labels:Object.keys(data),datasets:[{data:Object.values(data)}]},
+options:{plugins:{legend:{display:false}}}
+})
+
+}
+
+function addMaster(type){
+
+let val=prompt("Enter value")
+if(!val) return
+
+masterData[type].push(val)
+
+renderData()
+saveData()
+
+}
+
+function renderData(){
+
+for(let key in masterData){
+
+let table=document.getElementById(key)
+if(!table) continue
+
+table.innerHTML=""
+
+masterData[key].forEach((v,i)=>{
+
+let row=document.createElement("tr")
+
+let input=textInput(v)
+
+input.oninput=function(){
+masterData[key][i]=this.value
+saveData()
+}
+
+let td=document.createElement("td")
+td.appendChild(input)
+row.appendChild(td)
+
+let del=document.createElement("button")
+del.innerText="X"
+del.className="delete-btn"
+
+del.onclick=function(){
+masterData[key].splice(i,1)
+renderData()
+saveData()
+}
+
+let td2=document.createElement("td")
+td2.appendChild(del)
+row.appendChild(td2)
+
+table.appendChild(row)
+
+})
+
+}
 
 }
 
@@ -428,84 +631,22 @@ for(let section in db){
 if(section==="masterData") continue
 
 currentTab=section
-db[section].forEach(rowData=>addRow(rowData))
+db[section].forEach(r=>addRow(r))
 
 }
 
 currentTab="pipeline"
 
-}
-
-function addMaster(type){
-let val=prompt("Enter value")
-if(!val) return
-masterData[type].push(val)
-renderData()
-saveData()
-}
-
-function renderData(){
-
-for(let key in masterData){
-
-let table=document.getElementById(key)
-if(!table) continue
-
-table.innerHTML=""
-
-masterData[key].forEach((v,i)=>{
-
-let row=document.createElement("tr")
-
-let input=document.createElement("input")
-input.value=v
-input.oninput=function(){
-masterData[key][i]=this.value
-saveData()
-}
-
-let td=document.createElement("td")
-td.appendChild(input)
-row.appendChild(td)
-
-let del=document.createElement("button")
-del.innerText="X"
-del.className="delete-btn"
-
-del.onclick=function(){
-masterData[key].splice(i,1)
-renderData()
-saveData()
-}
-
-let td2=document.createElement("td")
-td2.appendChild(del)
-row.appendChild(td2)
-
-table.appendChild(row)
-
-})
-
-}
-
-}
-
-function switchTab(tab){
-
-currentTab=tab
-
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
-document.getElementById(tab).classList.add("active")
-
-document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"))
-event.target.classList.add("active")
+updateCharts()
 
 }
 
 function exportBackup(){
 
 let data=localStorage.getItem(STORAGE)||"{}"
+
 let blob=new Blob([data],{type:"application/json"})
+
 let a=document.createElement("a")
 a.href=URL.createObjectURL(blob)
 a.download="dashboard_backup.json"
@@ -523,8 +664,10 @@ let file=e.target.files[0]
 let reader=new FileReader()
 
 reader.onload=function(evt){
+
 localStorage.setItem(STORAGE,evt.target.result)
 location.reload()
+
 }
 
 reader.readAsText(file)
