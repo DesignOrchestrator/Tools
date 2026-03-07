@@ -249,6 +249,7 @@ let name=prompt("Workflow name")
 if(!name) return
 
 currentWorkflow=name
+
 renderWorkflowSelector()
 render()
 
@@ -261,22 +262,6 @@ function addStage(){
 let stage=prompt("Stage name")
 
 if(!stage) return
-
-data.push({
-workflow:currentWorkflow,
-stage:stage,
-action:"",
-ref:""
-})
-
-save()
-render()
-
-}
-
-/* FIXED: ADD ROW FUNCTION */
-
-function addRow(stage){
 
 data.push({
 workflow:currentWorkflow,
@@ -335,7 +320,7 @@ header.className="stage-header"
 
 header.innerHTML=`
 <input value="${stage}" onchange="renameStage('${stage}',this.value)">
-<button onclick="addRow('${stage}')">+</button>
+<button onclick="quickAdd('${stage}')">+</button>
 `
 
 let body=document.createElement("div")
@@ -364,7 +349,7 @@ stageRows.forEach((row,rowIndex)=>{
 
 let index=data.indexOf(row)
 
-let step=\`${stageIndex+1}.${rowIndex+1}\`
+let step=\`\${stageIndex+1}.\${rowIndex+1}\`
 
 let tr=document.createElement("tr")
 
@@ -409,6 +394,28 @@ container.appendChild(stageBox)
 
 }
 
+/* QUICK ADD STEP */
+
+function quickAdd(stage){
+
+let action=prompt("Step Action")
+
+if(action===null) return
+
+let ref=prompt("Reference (optional)")
+
+data.push({
+workflow:currentWorkflow,
+stage:stage,
+action:action,
+ref:ref||""
+})
+
+save()
+render()
+
+}
+
 /* RENAME STAGE */
 
 function renameStage(oldName,newName){
@@ -418,6 +425,27 @@ if(r.stage===oldName && r.workflow===currentWorkflow){
 r.stage=newName
 }
 })
+
+save()
+render()
+
+}
+
+/* UPDATE */
+
+function update(i,key,val){
+
+data[i][key]=val
+
+save()
+
+}
+
+/* DELETE */
+
+function deleteRow(i){
+
+data.splice(i,1)
 
 save()
 render()
@@ -438,36 +466,16 @@ let reader=new FileReader()
 
 let f=e.target.files[0]
 
-if(f.name.endsWith(".json")){
-
-reader.onload=function(){
-
-let rows=JSON.parse(reader.result)
-
-data=data.concat(rows)
-
-save()
-render()
-
-}
-
-reader.readAsText(f)
-
-}
-
-else{
-
 reader.onload=function(evt){
 
 let workbook=XLSX.read(evt.target.result,{type:'binary'})
 let sheet=workbook.Sheets[workbook.SheetNames[0]]
-
 let json=XLSX.utils.sheet_to_json(sheet)
 
 json.forEach(r=>{
 
 data.push({
-workflow:r.Workflow || "Imported Workflow",
+workflow:r.Workflow || currentWorkflow,
 stage:r.Stage || "Imported Stage",
 action:r.Action || "",
 ref:r.Reference || ""
@@ -484,51 +492,22 @@ reader.readAsBinaryString(f)
 
 }
 
-}
-
 file.click()
 
 }
 
-/* UPDATE */
-
-function update(i,key,val){
-
-data[i][key]=val
-
-save()
-render()
-
-}
-
-/* DELETE */
-
-function deleteRow(i){
-
-data.splice(i,1)
-
-save()
-render()
-
-}
-
-/* EXPORT */
+/* BACKUP */
 
 function exportBackup(){
 
 let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
 
 let a=document.createElement("a")
-
 a.href=URL.createObjectURL(blob)
-
 a.download="workflow-template-backup.json"
-
 a.click()
 
 }
-
-/* IMPORT BACKUP */
 
 function importBackup(){
 
