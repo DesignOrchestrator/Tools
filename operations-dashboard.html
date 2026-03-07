@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Business Operations Dashboard</title>
+
+<style>
+
+body{
+font-family:Arial, sans-serif;
+margin:20px;
+background:#f5f7fb;
+}
+
+h1{
+margin-bottom:10px;
+}
+
+.tabs{
+margin-bottom:15px;
+}
+
+.tabs button{
+padding:8px 14px;
+margin-right:6px;
+border:none;
+background:#2d7ff9;
+color:white;
+border-radius:4px;
+cursor:pointer;
+}
+
+.tabs button.active{
+background:#174ea6;
+}
+
+.toolbar{
+margin-bottom:12px;
+}
+
+.toolbar button{
+padding:6px 12px;
+margin-right:6px;
+border:none;
+background:#444;
+color:white;
+border-radius:4px;
+cursor:pointer;
+}
+
+.toolbar button.danger{
+background:#d9534f;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:6px;
+text-align:left;
+}
+
+th{
+background:#eef1f6;
+}
+
+input,select{
+width:100%;
+border:none;
+outline:none;
+background:transparent;
+}
+
+.delete-btn{
+background:#ff5c5c;
+color:white;
+border:none;
+padding:3px 8px;
+border-radius:3px;
+cursor:pointer;
+}
+
+.section{
+display:none;
+}
+
+.section.active{
+display:block;
+}
+
+.footer{
+margin-top:10px;
+font-size:12px;
+color:#777;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Business Operations Dashboard</h1>
+
+<div class="tabs">
+<button onclick="switchTab('pipeline')" class="active">Lead Pipeline</button>
+<button onclick="switchTab('clients')">Client Tracker</button>
+<button onclick="switchTab('projects')">Project Tracker</button>
+<button onclick="switchTab('freelancers')">Freelancer Tracker</button>
+<button onclick="switchTab('revenue')">Revenue Tracker</button>
+</div>
+
+<div class="toolbar">
+<button onclick="addRow()">Add Row</button>
+<button onclick="exportBackup()">Export Backup</button>
+<button onclick="importBackup()">Import Backup</button>
+<button class="danger" onclick="clearAll()">Clear All</button>
+<input type="file" id="fileInput" style="display:none">
+</div>
+
+<!-- PIPELINE -->
+<div id="pipeline" class="section active">
+<table>
+<thead>
+<tr>
+<th>Company</th>
+<th>Contact</th>
+<th>Country</th>
+<th>Stage</th>
+<th>Potential Value</th>
+<th>Last Action</th>
+<th>Notes</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<!-- CLIENT -->
+<div id="clients" class="section">
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>Country</th>
+<th>Contact</th>
+<th>First Project</th>
+<th>Status</th>
+<th>Notes</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<!-- PROJECT -->
+<div id="projects" class="section">
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Client</th>
+<th>Type</th>
+<th>Stage</th>
+<th>Deadline</th>
+<th>Status</th>
+<th>Notes</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<!-- FREELANCER -->
+<div id="freelancers" class="section">
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Role</th>
+<th>Country</th>
+<th>Rate</th>
+<th>Availability</th>
+<th>Rating</th>
+<th>Notes</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<!-- REVENUE -->
+<div id="revenue" class="section">
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Client</th>
+<th>Total Fee</th>
+<th>Paid</th>
+<th>Balance</th>
+<th>Status</th>
+<th>Notes</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<div class="footer">
+Data stored locally in browser. Export backup regularly.
+</div>
+
+<script>
+
+const STORAGE="operations_dashboard";
+let currentTab="pipeline";
+
+const dropdowns={
+pipeline:["Lead Identified","Contacted","Responded","Discovery","Proposal Sent","Negotiation","Won","Lost"],
+clients:["Active","Inactive","Completed","Potential"],
+projects:["Planning","Kickoff","Production","Coordination","Review","Delivery","Completed"],
+freelancers:["Available","Busy","Unavailable"],
+revenue:["Pending","Partial","Paid","Overdue"]
+};
+
+function switchTab(tab){
+
+document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+event.target.classList.add("active");
+
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+
+document.getElementById(tab).classList.add("active");
+
+currentTab=tab;
+
+}
+
+function addRow(data={}){
+
+let table=document.querySelector("#"+currentTab+" tbody");
+let row=document.createElement("tr");
+
+let columns=document.querySelectorAll("#"+currentTab+" thead th").length-1;
+
+for(let i=0;i<columns;i++){
+
+let td=document.createElement("td");
+
+if(i===3 && dropdowns[currentTab]){
+
+let select=document.createElement("select");
+
+dropdowns[currentTab].forEach(v=>{
+let opt=document.createElement("option");
+opt.value=v;
+opt.text=v;
+select.appendChild(opt);
+});
+
+select.value=data[i]||dropdowns[currentTab][0];
+select.onchange=saveData;
+
+td.appendChild(select);
+
+}else{
+
+let input=document.createElement("input");
+input.value=data[i]||"";
+input.oninput=saveData;
+td.appendChild(input);
+
+}
+
+row.appendChild(td);
+
+}
+
+let del=document.createElement("button");
+del.innerText="X";
+del.className="delete-btn";
+
+del.onclick=function(){
+row.remove();
+saveData();
+};
+
+let td=document.createElement("td");
+td.appendChild(del);
+
+row.appendChild(td);
+
+table.appendChild(row);
+
+saveData();
+
+}
+
+function saveData(){
+
+let db={};
+
+document.querySelectorAll(".section").forEach(section=>{
+
+let name=section.id;
+
+let rows=section.querySelectorAll("tbody tr");
+
+db[name]=[];
+
+rows.forEach(r=>{
+
+let cells=r.querySelectorAll("input,select");
+
+let row=[];
+
+cells.forEach(c=>row.push(c.value));
+
+db[name].push(row);
+
+});
+
+});
+
+localStorage.setItem(STORAGE,JSON.stringify(db));
+
+}
+
+function loadData(){
+
+let db=localStorage.getItem(STORAGE);
+
+if(!db) return;
+
+db=JSON.parse(db);
+
+for(let section in db){
+
+let table=document.querySelector("#"+section+" tbody");
+
+db[section].forEach(row=>{
+
+currentTab=section;
+addRow(row);
+
+});
+
+}
+
+currentTab="pipeline";
+
+}
+
+function exportBackup(){
+
+let data=localStorage.getItem(STORAGE)||"{}";
+
+let blob=new Blob([data],{type:"application/json"});
+
+let a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+a.download="operations_dashboard_backup.json";
+
+a.click();
+
+}
+
+function importBackup(){
+
+document.getElementById("fileInput").click();
+
+document.getElementById("fileInput").onchange=function(e){
+
+let file=e.target.files[0];
+
+let reader=new FileReader();
+
+reader.onload=function(evt){
+
+localStorage.setItem(STORAGE,evt.target.result);
+
+location.reload();
+
+};
+
+reader.readAsText(file);
+
+};
+
+}
+
+function clearAll(){
+
+if(!confirm("Clear all stored data?")) return;
+
+localStorage.removeItem(STORAGE);
+
+location.reload();
+
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>
