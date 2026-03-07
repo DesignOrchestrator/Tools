@@ -48,8 +48,6 @@ font-size:12px;
 .secondary{background:#6c757d;color:white;}
 .danger{background:#e55353;color:white;}
 
-/* INFO BAR */
-
 .infobar{
 margin-top:6px;
 font-size:12px;
@@ -64,12 +62,24 @@ margin:auto;
 padding:20px;
 }
 
-/* STAGE BOX */
+/* WORKFLOW */
+
+.workflow-box{
+margin-top:25px;
+}
+
+.workflow-title{
+font-weight:700;
+font-size:15px;
+margin-bottom:10px;
+}
+
+/* STAGE */
 
 .stage-box{
 background:white;
 border-radius:8px;
-margin-top:14px;
+margin-top:12px;
 box-shadow:0 2px 6px rgba(0,0,0,0.05);
 overflow:hidden;
 }
@@ -138,11 +148,10 @@ font-size:11px;
 <div class="toolbar">
 
 <button class="primary" onclick="addRow()">Add Row</button>
-<button class="success" onclick="addStage()">Add Stage</button>
+<button class="success" onclick="addWorkflow()">Add Workflow</button>
 
 <button class="secondary" onclick="exportBackup()">Export Backup</button>
 <button class="secondary" onclick="importBackup()">Import Backup</button>
-<button class="secondary" onclick="importTemplate()">Import Template</button>
 
 <button class="danger" onclick="clearData()">Clear Data</button>
 
@@ -151,6 +160,7 @@ font-size:11px;
 </div>
 
 <div class="infobar">
+Workflows: <span id="workflowCount">0</span> |
 Stages: <span id="stageCount">0</span> |
 Steps: <span id="stepCount">0</span>
 </div>
@@ -158,9 +168,7 @@ Steps: <span id="stepCount">0</span>
 </div>
 
 <div class="container">
-
 <div id="workflow"></div>
-
 </div>
 
 <script>
@@ -168,8 +176,6 @@ Steps: <span id="stepCount">0</span>
 const STORAGE_KEY="workflow_template_data"
 
 let data=[]
-
-/* LOAD */
 
 function load(){
 
@@ -183,27 +189,37 @@ render()
 
 }
 
-/* SAVE */
-
 function save(){
 localStorage.setItem(STORAGE_KEY,JSON.stringify(data))
 }
 
-/* GET STAGES */
+/* GROUP WORKFLOWS */
 
-function getStages(){
+function groupWorkflows(){
 
-return [...new Set(data.map(r=>r.stage).filter(Boolean))]
+let workflows={}
+
+data.forEach(row=>{
+
+let wf=row.workflow || "Unassigned Workflow"
+
+if(!workflows[wf]) workflows[wf]=[]
+
+workflows[wf].push(row)
+
+})
+
+return workflows
 
 }
 
-/* GROUP */
+/* GROUP STAGES */
 
-function groupStages(){
+function groupStages(rows){
 
 let groups={}
 
-data.forEach(row=>{
+rows.forEach(row=>{
 
 let stage=row.stage || "Unassigned"
 
@@ -224,22 +240,35 @@ function render(){
 let container=document.getElementById("workflow")
 container.innerHTML=""
 
-let groups=groupStages()
-let stages=Object.keys(groups)
+let workflows=groupWorkflows()
 
-document.getElementById("stageCount").innerText=stages.length
+document.getElementById("workflowCount").innerText=Object.keys(workflows).length
+document.getElementById("stageCount").innerText=
+new Set(data.map(r=>r.stage)).size
 document.getElementById("stepCount").innerText=data.length
 
-stages.forEach((stage,stageIndex)=>{
+Object.keys(workflows).forEach(workflowName=>{
 
-let rows=groups[stage]
+let workflowBox=document.createElement("div")
+workflowBox.className="workflow-box"
+
+let title=document.createElement("div")
+title.className="workflow-title"
+title.innerText=workflowName
+
+workflowBox.appendChild(title)
+
+let stageGroups=groupStages(workflows[workflowName])
+
+Object.keys(stageGroups).forEach((stage,stageIndex)=>{
+
+let rows=stageGroups[stage]
 
 let stageBox=document.createElement("div")
 stageBox.className="stage-box"
 
 let header=document.createElement("div")
 header.className="stage-header"
-
 header.innerText=`${stageIndex+1}. ${stage}`
 
 let body=document.createElement("div")
@@ -250,6 +279,7 @@ table.innerHTML=`
 
 <thead>
 <tr>
+<th>Workflow</th>
 <th>Stage</th>
 <th class="col-step">Step</th>
 <th>Action</th>
@@ -275,9 +305,11 @@ let tr=document.createElement("tr")
 tr.innerHTML=`
 
 <td>
-<select onchange="update(${index},'stage',this.value)">
-${getStages().map(s=>`<option ${s===row.stage?'selected':''}>${s}</option>`).join("")}
-</select>
+<input value="${row.workflow||""}" onchange="update(${index},'workflow',this.value)">
+</td>
+
+<td>
+<input value="${row.stage||""}" onchange="update(${index},'stage',this.value)">
 </td>
 
 <td>${step}</td>
@@ -302,10 +334,11 @@ tbody.appendChild(tr)
 })
 
 body.appendChild(table)
+
 stageBox.appendChild(header)
 stageBox.appendChild(body)
 
-container.appendChild(stageBox)
+workflowBox.appendChild(stageBox)
 
 /* COLLAPSE */
 
@@ -315,24 +348,22 @@ body.style.display=body.style.display==="none"?"block":"none"
 
 })
 
+container.appendChild(workflowBox)
+
+})
+
 }
 
 /* ADD ROW */
 
 function addRow(){
 
-let stages=getStages()
-
-let stage=prompt(
-stages.length
-? "Stage name (existing or new):\n\n"+stages.join("\n")
-: "Stage name:"
-)
-
-if(!stage) return
+let workflow=prompt("Workflow name (optional)")
+let stage=prompt("Stage name")
 
 data.push({
-stage:stage,
+workflow:workflow||"",
+stage:stage||"",
 action:"",
 ref:""
 })
@@ -342,16 +373,17 @@ render()
 
 }
 
-/* ADD STAGE */
+/* ADD WORKFLOW */
 
-function addStage(){
+function addWorkflow(){
 
-let name=prompt("Stage name")
+let name=prompt("Workflow name")
 
 if(!name) return
 
 data.push({
-stage:name,
+workflow:name,
+stage:"Stage 1",
 action:"",
 ref:""
 })
@@ -364,11 +396,8 @@ render()
 /* UPDATE */
 
 function update(i,key,val){
-
 data[i][key]=val
-
 save()
-
 }
 
 /* DELETE */
@@ -424,12 +453,6 @@ reader.readAsText(e.target.files[0])
 file.click()
 
 }
-
-function importTemplate(){
-importBackup()
-}
-
-/* CLEAR */
 
 function clearData(){
 
