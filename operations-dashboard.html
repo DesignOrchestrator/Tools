@@ -7,28 +7,93 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{ font-family:Arial; margin:0; background:#f5f7fb; }
-.header{ position:sticky; top:0; background:white; z-index:1000; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-.headerTop{ display:flex; justify-content:space-between; align-items:flex-start; }
-.titleArea{ flex:1; }
-h1{ margin:0 0 5px 0; font-size:26px; }
-.tabs button{ padding:6px 12px; margin-right:5px; border:none; background:#2d7ff9; color:white; border-radius:4px; cursor:pointer; font-size:13px; }
-.tabs button.active{ background:#174ea6; }
-.toolbar{ margin-top:6px; }
-.toolbar button{ padding:5px 10px; margin-right:6px; border:none; background:#444; color:white; border-radius:4px; cursor:pointer; font-size:12px; }
-.toolbar button.danger{ background:#d9534f; }
-.chartArea{ display:flex; gap:10px; }
-.chartBox{ width:220px; height:180px; background:#fafafa; border:1px solid #ddd; border-radius:6px; padding:5px; }
-.content{ padding:20px; }
-table{ width:100%; border-collapse:collapse; background:white; margin-bottom: 20px;}
-th,td{ border:1px solid #ddd; padding:6px; }
-th{ background:#eef1f6; }
-select,input{ width:100%; border:none; outline:none; background:transparent; font-family: inherit; font-size: 13px;}
-.section{ display:none; }
-.section.active{ display:block; }
-.delete-btn{ background:#ff5c5c; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; }
-.dataTable{ max-width:500px; }
-.footer{ margin-top:10px; font-size:12px; color:#777; }
+:root {
+    --primary: #2d7ff9;
+    --primary-dark: #174ea6;
+    --danger: #d9534f;
+    --dark: #444;
+    --bg: #f5f7fb;
+}
+
+body{ font-family: 'Segoe UI', Arial, sans-serif; margin:0; background: var(--bg); color: #333; }
+
+.header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1000;
+    padding: 15px 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.headerTop { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.titleArea { flex: 1; }
+h1 { margin: 0 0 15px 0; font-size: 24px; color: #1a1a1a; }
+
+/* Grouped Button Styling */
+.button-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+.tabs button {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #555;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.tabs button.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.toolbar button {
+    padding: 6px 12px;
+    border: none;
+    background: var(--dark);
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.toolbar button.add-btn { background: #28a745; font-weight: bold; }
+.toolbar button.danger { background: var(--danger); }
+
+/* Search Bar */
+.search-container { margin-top: 10px; }
+.search-container input {
+    width: 300px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #fff;
+}
+
+/* Charts */
+.chartArea { display: flex; gap: 10px; }
+.chartBox { width: 200px; height: 160px; background: #fff; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; }
+
+/* Content & Tables */
+.content { padding: 25px; }
+.section { display: none; }
+.section.active { display: block; }
+
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+th { background: #f8f9fa; font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+
+select, input { width: 100%; border: 1px solid transparent; outline: none; background: transparent; padding: 4px; border-radius: 3px; }
+select:focus, input:focus { border-color: var(--primary); background: #fff; }
+
+.delete-btn { background: #ffeded; color: #d9534f; border: 1px solid #ffcccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+.delete-btn:hover { background: #d9534f; color: white; }
+
+.footer { margin-top: 20px; font-size: 12px; color: #999; text-align: center; }
 </style>
 </head>
 
@@ -38,22 +103,29 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
     <div class="headerTop">
         <div class="titleArea">
             <h1>Operations Dashboard</h1>
-            <div class="tabs">
+            
+            <div class="button-group tabs">
                 <button onclick="switchTab('pipeline')" id="tab-pipeline" class="active">Lead Pipeline</button>
                 <button onclick="switchTab('clients')" id="tab-clients">Client Tracker</button>
                 <button onclick="switchTab('projects')" id="tab-projects">Project Tracker</button>
-                <button onclick="switchTab('freelancers')" id="tab-freelancers">Freelancer Tracker</button>
-                <button onclick="switchTab('revenue')" id="tab-revenue">Revenue Tracker</button>
-                <button onclick="switchTab('data')" id="tab-data">Data</button>
+                <button onclick="switchTab('freelancers')" id="tab-freelancers">Freelancers</button>
+                <button onclick="switchTab('revenue')" id="tab-revenue">Revenue</button>
+                <button onclick="switchTab('data')" id="tab-data">Data Config</button>
             </div>
-            <div class="toolbar">
-                <button onclick="addRow()">Add Row</button>
+
+            <div class="button-group toolbar">
+                <button class="add-btn" onclick="addRow()">+ Add Row</button>
                 <button onclick="exportBackup()">Export Backup</button>
                 <button onclick="importBackup()">Import Backup</button>
-                <button class="danger" onclick="clearAll()">Clear All</button>
+                <button class="danger" onclick="clearAll()">Clear All Data</button>
                 <input type="file" id="fileInput" style="display:none">
             </div>
+
+            <div class="search-container">
+                <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Search current table...">
+            </div>
         </div>
+
         <div class="chartArea">
             <div class="chartBox"><canvas id="pipelineChart"></canvas></div>
             <div class="chartBox"><canvas id="projectChart"></canvas></div>
@@ -109,41 +181,31 @@ select,input{ width:100%; border:none; outline:none; background:transparent; fon
     </div>
 
     <div id="data" class="section">
-        <h3>Companies</h3>
-        <button onclick="addMaster('companies')">Add Company</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="companies"></tbody></table>
-
-        <h3>Clients</h3>
-        <button onclick="addMaster('clientsList')">Add Client</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="clientsList"></tbody></table>
-
-        <h3>Projects</h3>
-        <button onclick="addMaster('projectsList')">Add Project</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="projectsList"></tbody></table>
-
-        <h3>Countries</h3>
-        <button onclick="addMaster('countries')">Add Country</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="countries"></tbody></table>
-
-        <h3>Roles</h3>
-        <button onclick="addMaster('roles')">Add Role</button>
-        <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="roles"></tbody></table>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h3>Companies</h3> <button onclick="addMaster('companies')">Add</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="companies"></tbody></table>
+                <h3>Clients</h3> <button onclick="addMaster('clientsList')">Add</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="clientsList"></tbody></table>
+            </div>
+            <div>
+                <h3>Projects</h3> <button onclick="addMaster('projectsList')">Add</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="projectsList"></tbody></table>
+                <h3>Countries</h3> <button onclick="addMaster('countries')">Add</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="countries"></tbody></table>
+                <h3>Roles</h3> <button onclick="addMaster('roles')">Add</button>
+                <table class="dataTable"><thead><tr><th>Name</th><th></th></tr></thead><tbody id="roles"></tbody></table>
+            </div>
+        </div>
     </div>
 
-    <div class="footer">Data stored locally in browser. Export backup regularly.</div>
+    <div class="footer">Data stored locally in browser. Export backups regularly to prevent data loss.</div>
 </div>
 
 <script>
-const STORAGE = "ops_dashboard_v7";
+const STORAGE = "ops_dashboard_v8";
 let currentTab = "pipeline";
-
-let masterData = {
-    companies: [],
-    clientsList: [],
-    projectsList: [],
-    countries: [],
-    roles: []
-};
+let masterData = { companies: [], clientsList: [], projectsList: [], countries: [], roles: [] };
 
 const stages = ["Lead Identified", "Contacted", "Responded", "Discovery", "Proposal Sent", "Negotiation", "Won", "Lost"];
 const projectStages = ["Planning", "Kickoff", "Production", "Coordination", "Review", "Delivery", "Completed"];
@@ -162,19 +224,38 @@ function switchTab(tab) {
     document.getElementById(tab).classList.add("active");
     document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
     document.getElementById("tab-" + tab).classList.add("active");
+    document.getElementById("tableSearch").value = ""; // Clear search on tab switch
+    filterTable(); 
+}
+
+function filterTable() {
+    let input = document.getElementById("tableSearch");
+    let filter = input.value.toLowerCase();
+    let section = document.getElementById(currentTab);
+    let rows = section.querySelectorAll("tbody tr");
+
+    rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        // Also check values of inputs/selects inside the row
+        let inputs = row.querySelectorAll("input, select");
+        let inputValues = Array.from(inputs).map(i => i.value.toLowerCase()).join(" ");
+        
+        if (text.includes(filter) || inputValues.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
 }
 
 function dropdown(list, value) {
     let select = document.createElement("select");
     let emptyOpt = document.createElement("option");
-    emptyOpt.value = "";
-    emptyOpt.text = "-- Select --";
+    emptyOpt.value = ""; emptyOpt.text = "-- Select --";
     select.appendChild(emptyOpt);
-
     list.forEach(v => {
         let o = document.createElement("option");
-        o.value = v;
-        o.text = v;
+        o.value = v; o.text = v;
         select.appendChild(o);
     });
     if (value) select.value = value;
@@ -207,7 +288,6 @@ function addRow(data = [], targetTab = null) {
     for (let i = 0; i < headers.length - 1; i++) {
         let name = headers[i].innerText;
         let field;
-
         if (name === "Company") field = dropdown(masterData.companies, data[i]);
         else if (name === "Client") field = dropdown(masterData.clientsList, data[i]);
         else if (name === "Project") field = dropdown(masterData.projectsList, data[i]);
@@ -231,27 +311,40 @@ function addRow(data = [], targetTab = null) {
 
     let delTd = document.createElement("td");
     let del = document.createElement("button");
-    del.innerText = "X";
-    del.className = "delete-btn";
+    del.innerText = "X"; del.className = "delete-btn";
     del.onclick = function() { row.remove(); saveData(); updateCharts(); };
     delTd.appendChild(del);
     row.appendChild(delTd);
-
     table.appendChild(row);
     saveData();
     updateCharts();
 }
 
 function updateCharts() {
-    updatePipelineChart();
-    updateProjectChart();
-    updateRevenueChart();
+    updatePie("pipelineChart", "pipeline", 3, "Leads by Stage");
+    updatePie("projectChart", "projects", 5, "Project Status");
+    updatePie("revenueChart", "revenue", 6, "Payment Status");
+}
+
+function updatePie(canvasId, section, colIndex, title) {
+    let dataMap = countValues(getColumnData(section, colIndex));
+    if (window[canvasId + 'Obj']) window[canvasId + 'Obj'].destroy();
+    window[canvasId + 'Obj'] = new Chart(document.getElementById(canvasId), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(dataMap),
+            datasets: [{ data: Object.values(dataMap), backgroundColor: ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#34495e'] }]
+        },
+        options: {
+            plugins: { title: { display: true, text: title }, legend: { display: false } },
+            responsive: true, maintainAspectRatio: false
+        }
+    });
 }
 
 function getColumnData(section, colIndex) {
-    let rows = document.querySelectorAll("#" + section + " tbody tr");
     let arr = [];
-    rows.forEach(r => {
+    document.querySelectorAll("#" + section + " tbody tr").forEach(r => {
         let cells = r.querySelectorAll("input,select");
         if (cells[colIndex] && cells[colIndex].value) arr.push(cells[colIndex].value);
     });
@@ -260,67 +353,15 @@ function getColumnData(section, colIndex) {
 
 function countValues(arr) {
     let map = {};
-    arr.forEach(v => { map[v] = (map[v] || 0) + 1; });
+    arr.forEach(v => { map[v] = (map[v]||0) + 1; });
     return map;
-}
-
-function updatePipelineChart() {
-    let data = countValues(getColumnData("pipeline", 3));
-    if (pipelineChart) pipelineChart.destroy();
-    pipelineChart = new Chart(document.getElementById("pipelineChart"), {
-        type: "pie",
-        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { 
-            plugins: { 
-                legend: { display: false },
-                title: { display: true, text: 'Lead Stages', font: { size: 14 } } 
-            }, 
-            responsive: true, 
-            maintainAspectRatio: false 
-        }
-    });
-}
-
-function updateProjectChart() {
-    let data = countValues(getColumnData("projects", 5));
-    if (projectChart) projectChart.destroy();
-    projectChart = new Chart(document.getElementById("projectChart"), {
-        type: "doughnut",
-        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { 
-            plugins: { 
-                legend: { display: false },
-                title: { display: true, text: 'Project Status', font: { size: 14 } } 
-            }, 
-            responsive: true, 
-            maintainAspectRatio: false 
-        }
-    });
-}
-
-function updateRevenueChart() {
-    let data = countValues(getColumnData("revenue", 6));
-    if (revenueChart) revenueChart.destroy();
-    revenueChart = new Chart(document.getElementById("revenueChart"), {
-        type: "pie",
-        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
-        options: { 
-            plugins: { 
-                legend: { display: false },
-                title: { display: true, text: 'Payment Status', font: { size: 14 } } 
-            }, 
-            responsive: true, 
-            maintainAspectRatio: false 
-        }
-    });
 }
 
 function addMaster(type) {
     let val = prompt("Enter value");
     if (!val) return;
     masterData[type].push(val);
-    renderData();
-    saveData();
+    renderData(); saveData();
     location.reload(); 
 }
 
@@ -332,25 +373,13 @@ function renderData() {
         masterData[key].forEach((v, i) => {
             let row = document.createElement("tr");
             let input = textInput(v);
-            input.onchange = function() {
-                masterData[key][i] = this.value;
-                saveData();
-            };
-            let td1 = document.createElement("td");
-            td1.appendChild(input);
+            input.onchange = function() { masterData[key][i] = this.value; saveData(); };
+            let td1 = document.createElement("td"); td1.appendChild(input);
             let td2 = document.createElement("td");
-            let del = document.createElement("button");
-            del.innerText = "X";
-            del.className = "delete-btn";
-            del.onclick = function() {
-                masterData[key].splice(i, 1);
-                renderData();
-                saveData();
-                location.reload();
-            };
+            let del = document.createElement("button"); del.innerText = "X"; del.className = "delete-btn";
+            del.onclick = function() { masterData[key].splice(i, 1); renderData(); saveData(); location.reload(); };
             td2.appendChild(del);
-            row.appendChild(td1);
-            row.appendChild(td2);
+            row.appendChild(td1); row.appendChild(td2);
             tableBody.appendChild(row);
         });
     }
@@ -358,15 +387,11 @@ function renderData() {
 
 function saveData() {
     let db = { masterData: masterData };
-    const sections = ["pipeline", "clients", "projects", "freelancers", "revenue"];
-    sections.forEach(name => {
-        let sectionDiv = document.getElementById(name);
-        let rows = sectionDiv.querySelectorAll("tbody tr");
+    ["pipeline", "clients", "projects", "freelancers", "revenue"].forEach(name => {
         db[name] = [];
-        rows.forEach(r => {
-            let cells = r.querySelectorAll("input,select");
+        document.querySelectorAll("#" + name + " tbody tr").forEach(r => {
             let rowData = [];
-            cells.forEach(c => rowData.push(c.value));
+            r.querySelectorAll("input,select").forEach(c => rowData.push(c.value));
             db[name].push(rowData);
         });
     });
@@ -377,17 +402,11 @@ function loadData() {
     let dbStr = localStorage.getItem(STORAGE);
     if (!dbStr) return;
     let db = JSON.parse(dbStr);
-
     if (db.masterData) masterData = db.masterData;
     renderData();
-
-    const sections = ["pipeline", "clients", "projects", "freelancers", "revenue"];
-    sections.forEach(section => {
-        if (db[section]) {
-            db[section].forEach(rowData => addRow(rowData, section));
-        }
+    ["pipeline", "clients", "projects", "freelancers", "revenue"].forEach(section => {
+        if (db[section]) db[section].forEach(rowData => addRow(rowData, section));
     });
-    
     updateCharts();
 }
 
@@ -403,20 +422,14 @@ function exportBackup() {
 function importBackup() {
     document.getElementById("fileInput").click();
     document.getElementById("fileInput").onchange = function(e) {
-        let file = e.target.files[0];
         let reader = new FileReader();
-        reader.onload = function(evt) {
-            localStorage.setItem(STORAGE, evt.target.result);
-            location.reload();
-        };
-        reader.readAsText(file);
+        reader.onload = function(evt) { localStorage.setItem(STORAGE, evt.target.result); location.reload(); };
+        reader.readAsText(e.target.files[0]);
     };
 }
 
 function clearAll() {
-    if (!confirm("Clear all data?")) return;
-    localStorage.removeItem(STORAGE);
-    location.reload();
+    if (confirm("Clear all data permanently?")) { localStorage.removeItem(STORAGE); location.reload(); }
 }
 
 window.onload = loadData;
